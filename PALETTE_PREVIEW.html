@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiteHub - Premium Color Palette Previews</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 50px;
+            color: #333;
+            font-size: 2.5em;
+        }
+        
+        .palettes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+        
+        .palette-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .palette-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .palette-header {
+            padding: 20px;
+            color: white;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .palette-header h2 {
+            font-size: 1.5em;
+        }
+        
+        .palette-header .emoji {
+            font-size: 2em;
+        }
+        
+        .palette-header .vibe {
+            font-size: 0.9em;
+            opacity: 0.9;
+            font-style: italic;
+        }
+        
+        .colors {
+            padding: 20px;
+        }
+        
+        .color-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
+        .color-box {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .color-info {
+            flex: 1;
+        }
+        
+        .color-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 0.9em;
+        }
+        
+        .color-hex {
+            color: #666;
+            font-size: 0.85em;
+            font-family: monospace;
+        }
+        
+        .demo-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .demo-title {
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+        
+        .demo-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-primary {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn-primary:hover {
+            transform: scale(1.05);
+        }
+        
+        .btn-secondary {
+            padding: 8px 16px;
+            border: 2px solid;
+            border-radius: 20px;
+            background: white;
+            font-weight: bold;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn-secondary:hover {
+            transform: scale(1.05);
+        }
+        
+        .current-palette {
+            border: 3px solid #FFD700;
+        }
+        
+        .badge {
+            background: #FFD700;
+            color: #333;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .recommendation {
+            background: #f0f8ff;
+            padding: 20px;
+            border-left: 4px solid #4169e1;
+            border-radius: 4px;
+            margin-top: 40px;
+        }
+        
+        .recommendation h3 {
+            color: #4169e1;
+            margin-bottom: 10px;
+        }
+        
+        .recommendation p {
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .recommendation ul {
+            margin-left: 20px;
+            margin-top: 10px;
+            color: #333;
+        }
+        
+        .recommendation li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 BiteHub Premium Color Palette Previews</h1>
+        
+        <div class="palettes-grid">
+            
+            <!-- Current Palette -->
+            <div class="palette-card current-palette">
+                <div class="palette-header" style="background: linear-gradient(135deg, #6E4E39 0%, #AF794B 100%);">
+                    <div class="emoji">🏠</div>
+                    <h2>Current Palette</h2>
+                    <div class="vibe">Warm Terracotta</div>
+                    <span class="badge">YOUR CHOICE ✓</span>
+                </div>
+                <div class="colors">
+                    <div class="color-row">
+                        <div class="color-box" style="background: #6E4E39;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Primary Dark</div>
+                            <div class="color-hex">#6E4E39</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #C89450;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Accent Prime</div>
+                            <div class="color-hex">#C89450</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #E8CCBB;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Accent Light</div>
+                            <div class="color-hex">#E8CCBB</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #F5EFEA;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Background</div>
+                            <div class="color-hex">#F5EFEA</div>
+                        </div>
+                    </div>
+                    <div class="demo-section">
+                        <div class="demo-title">Demo Buttons</div>
+                        <div class="demo-buttons">
+                            <button class="btn-primary" style="background: #C89450;">Book Now</button>
+                            <button class="btn-secondary" style="border-color: #C89450; color: #C89450;">View Details</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Luxury Gold & Navy -->
+            <div class="palette-card">
+                <div class="palette-header" style="background: linear-gradient(135deg, #1a1a2e 0%, #2d3561 100%);">
+                    <div class="emoji">💎</div>
+                    <h2>Luxury Gold</h2>
+                    <div class="vibe">Upscale Fine Dining</div>
+                </div>
+                <div class="colors">
+                    <div class="color-row">
+                        <div class="color-box" style="background: #1a1a2e;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Primary Dark</div>
+                            <div class="color-hex">#1a1a2e</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #d4af37;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Accent Gold</div>
+                            <div class="color-hex">#d4af37</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #e6c956;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Accent Light</div>
+                            <div class="color-hex">#e6c956</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #f8f7f4;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Background</div>
+                            <div class="color-hex">#f8f7f4</div>
+                        </div>
+                    </div>
+                    <div class="demo-section">
+                        <div class="demo-title">Demo Buttons</div>
+                        <div class="demo-buttons">
+                            <button class="btn-primary" style="background: #d4af37; color: #1a1a2e;">Reserve</button>
+                            <button class="btn-secondary" style="border-color: #d4af37; color: #1a1a2e;">Learn More</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Vibrant Coral & Teal -->
+            <div class="palette-card">
+                <div class="palette-header" style="background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);">
+                    <div class="emoji">🌊</div>
+                    <h2>Vibrant Coral</h2>
+                    <div class="vibe">Modern & Trendy</div>
+                </div>
+                <div class="colors">
+                    <div class="color-row">
+                        <div class="color-box" style="background: #ff6b6b;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Primary Coral</div>
+                            <div class="color-hex">#ff6b6b</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #20c997;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Accent Teal</div>
+                            <div class="color-hex">#20c997</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #51cf66;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Accent Green</div>
+                            <div class="color-hex">#51cf66</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #f1f3f5;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Background</div>
+                            <div class="color-hex">#f1f3f5</div>
+                        </div>
+                    </div>
+                    <div class="demo-section">
+                        <div class="demo-title">Demo Buttons</div>
+                        <div class="demo-buttons">
+                            <button class="btn-primary" style="background: #20c997;">Order Now</button>
+                            <button class="btn-secondary" style="border-color: #ff6b6b; color: #ff6b6b;">Explore</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Burgundy & Rose -->
+            <div class="palette-card">
+                <div class="palette-header" style="background: linear-gradient(135deg, #5d2e3f 0%, #8b4757 100%);">
+                    <div class="emoji">🍷</div>
+                    <h2>Deep Burgundy</h2>
+                    <div class="vibe">Classic Heritage</div>
+                </div>
+                <div class="colors">
+                    <div class="color-row">
+                        <div class="color-box" style="background: #5d2e3f;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Primary Dark</div>
+                            <div class="color-hex">#5d2e3f</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #c17a7e;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Accent Rose</div>
+                            <div class="color-hex">#c17a7e</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #e8d0d1;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Accent Light</div>
+                            <div class="color-hex">#e8d0d1</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #faf9f7;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Background</div>
+                            <div class="color-hex">#faf9f7</div>
+                        </div>
+                    </div>
+                    <div class="demo-section">
+                        <div class="demo-title">Demo Buttons</div>
+                        <div class="demo-buttons">
+                            <button class="btn-primary" style="background: #c17a7e;">Reserve Table</button>
+                            <button class="btn-secondary" style="border-color: #c17a7e; color: #c17a7e;">View Menu</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Forest Green & Gold -->
+            <div class="palette-card">
+                <div class="palette-header" style="background: linear-gradient(135deg, #1b4332 0%, #2d6a4f 100%);">
+                    <div class="emoji">🌿</div>
+                    <h2>Forest Green</h2>
+                    <div class="vibe">Organic & Natural</div>
+                </div>
+                <div class="colors">
+                    <div class="color-row">
+                        <div class="color-box" style="background: #1b4332;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Primary Dark</div>
+                            <div class="color-hex">#1b4332</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #d4a574;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Accent Gold</div>
+                            <div class="color-hex">#d4a574</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #e8c9a0;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Accent Light</div>
+                            <div class="color-hex">#e8c9a0</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #f0f4f1;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Background</div>
+                            <div class="color-hex">#f0f4f1</div>
+                        </div>
+                    </div>
+                    <div class="demo-section">
+                        <div class="demo-title">Demo Buttons</div>
+                        <div class="demo-buttons">
+                            <button class="btn-primary" style="background: #d4a574; color: #1b4332;">Eat Healthy</button>
+                            <button class="btn-secondary" style="border-color: #1b4332; color: #1b4332;">More Info</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Indigo & Coral -->
+            <div class="palette-card">
+                <div class="palette-header" style="background: linear-gradient(135deg, #2e1a47 0%, #4a3075 100%);">
+                    <div class="emoji">🎨</div>
+                    <h2>Indigo & Coral</h2>
+                    <div class="vibe">Artistic & Creative</div>
+                </div>
+                <div class="colors">
+                    <div class="color-row">
+                        <div class="color-box" style="background: #2e1a47;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Primary Dark</div>
+                            <div class="color-hex">#2e1a47</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #ff9a56;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Accent Coral</div>
+                            <div class="color-hex">#ff9a56</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #ffc27d;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Accent Peach</div>
+                            <div class="color-hex">#ffc27d</div>
+                        </div>
+                    </div>
+                    <div class="color-row">
+                        <div class="color-box" style="background: #f5f4fa;"></div>
+                        <div class="color-info">
+                            <div class="color-name">Background</div>
+                            <div class="color-hex">#f5f4fa</div>
+                        </div>
+                    </div>
+                    <div class="demo-section">
+                        <div class="demo-title">Demo Buttons</div>
+                        <div class="demo-buttons">
+                            <button class="btn-primary" style="background: #ff9a56;">Discover</button>
+                            <button class="btn-secondary" style="border-color: #ff9a56; color: #ff9a56;">Explore</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <div class="recommendation">
+            <h3>💡 My Recommendation</h3>
+            <p><strong>Keep Your Current Palette!</strong> Here's why:</p>
+            <ul>
+                <li>✅ <strong>Inclusive & Welcoming</strong> - Works for all restaurant types (fine dining to casual)</li>
+                <li>✅ <strong>Warm & Approachable</strong> - Makes users feel comfortable and makes them want to book</li>
+                <li>✅ <strong>Professional</strong> - Not too trendy, will age well</li>
+                <li>✅ <strong>Perfect for Growth</strong> - Appeals to a wide audience</li>
+                <li>✅ <strong>Unique</strong> - Stands out from competitor blue/red booking platforms</li>
+            </ul>
+            <p style="margin-top: 15px;"><strong>Future Enhancement:</strong> Consider offering premium restaurants a "luxury gold" theme as an optional upgrade to customize their brand experience!</p>
+        </div>
+    </div>
+</body>
+</html>

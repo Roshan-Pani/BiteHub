@@ -111,7 +111,7 @@ function BookingPage() {
   const infantCount = bookingDetails.guests.filter(g => parseInt(g.age) < 2).length
 
   return (
-    <div className="min-h-screen bg-stone-50/30">
+    <div className="min-h-screen bg-[#F2F2F0]">
       <Header />
       
       <main className="max-w-[1280px] mx-auto px-6 py-8">
@@ -120,15 +120,15 @@ function BookingPage() {
         <div className="mb-8">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-stone-600 hover:text-stone-800 mb-4 transition-colors"
+            className="flex items-center gap-2 text-black hover:text-black mb-4 transition-colors font-semibold"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back
           </button>
-          <h1 className="text-3xl font-bold text-stone-800">Complete Your Booking</h1>
-          <p className="text-stone-600 mt-2">Reserve a table at {restaurant.name}</p>
+          <h1 className="text-3xl font-bold text-black">Complete Your Booking</h1>
+                  className="px-4 py-2 bg-accent-600 text-white rounded-lg hover:bg-brand-900 hover:text-white transition-colors text-sm font-bold"
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -137,25 +137,25 @@ function BookingPage() {
           <div className="lg:col-span-2 space-y-6">
             
             {/* Date & Time Selection */}
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl p-6 shadow-lg">
-              <h2 className="text-xl font-bold text-stone-800 mb-4">📅 When?</h2>
+            <div className="bg-white  rounded-2xl p-6 shadow-md">
+              <h2 className="text-xl font-bold text-black mb-4">When?</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-stone-700 mb-2">Date</label>
+                  <label className="block text-sm font-bold text-black mb-2">Date</label>
                   <input
                     type="date"
                     value={bookingDetails.date}
                     onChange={(e) => setBookingDetails(prev => ({ ...prev, date: e.target.value }))}
                     min={new Date().toISOString().split('T')[0]}
-                    className={`w-full px-4 py-3 border ${errors.date ? 'border-red-400' : 'border-stone-200'} rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/40`}
+                    className={`w-full px-4 py-3 border ${errors.date ? 'border-red-400' : 'border-brand-200'} rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-100/40`}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-stone-700 mb-2">Time</label>
+                  <label className="block text-sm font-bold text-black mb-2">Time</label>
                   <select
                     value={bookingDetails.time}
                     onChange={(e) => setBookingDetails(prev => ({ ...prev, time: e.target.value }))}
-                    className={`w-full px-4 py-3 border ${errors.time ? 'border-red-400' : 'border-stone-200'} rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/40`}
+                    className={`w-full px-4 py-3 border ${errors.time ? 'border-red-400' : 'border-brand-200'} rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-100/40`}
                   >
                     <option value="">Select Time</option>
                     <option value="12:00 PM">12:00 PM</option>
@@ -171,12 +171,12 @@ function BookingPage() {
             </div>
 
             {/* Guest Details */}
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl p-6 shadow-lg">
+            <div className="bg-white  rounded-2xl p-6 shadow-md">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-stone-800">👥 Guest Details</h2>
+                <h2 className="text-xl font-bold text-black">Guest Details</h2>
                 <button
                   onClick={addGuest}
-                  className="px-4 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition-colors text-sm font-semibold"
+                  className="px-4 py-2 bg-brand-50 text-black rounded-lg hover:bg-gray-100 transition-colors text-sm font-bold"
                 >
                   + Add Guest
                 </button>
@@ -184,9 +184,9 @@ function BookingPage() {
 
               <div className="space-y-4">
                 {bookingDetails.guests.map((guest, idx) => (
-                  <div key={guest.id} className="p-4 border border-stone-200 rounded-xl">
+                  <div key={guest.id} className="p-4 border border-brand-200 rounded-xl">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-stone-700">Guest {idx + 1}</h3>
+                      <h3 className="font-bold text-black">Guest {idx + 1}</h3>
                       {bookingDetails.guests.length > 1 && (
                         <button
                           onClick={() => removeGuest(guest.id)}
@@ -198,17 +198,17 @@ function BookingPage() {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-xs font-semibold text-stone-600 mb-1">Name *</label>
+                        <label className="block text-xs font-bold text-black mb-1">Name *</label>
                         <input
                           type="text"
                           value={guest.name}
                           onChange={(e) => updateGuest(guest.id, 'name', e.target.value)}
                           placeholder="Full Name"
-                          className={`w-full px-3 py-2 border ${errors[`guest${idx}Name`] ? 'border-red-400' : 'border-stone-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400/40 text-sm`}
+                          className={`w-full px-3 py-2 border ${errors[`guest${idx}Name`] ? 'border-red-400' : 'border-brand-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-100/40 text-sm`}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-stone-600 mb-1">Age *</label>
+                        <label className="block text-xs font-bold text-black mb-1">Age *</label>
                         <input
                           type="number"
                           value={guest.age}
@@ -216,15 +216,15 @@ function BookingPage() {
                           placeholder="Age"
                           min="0"
                           max="120"
-                          className={`w-full px-3 py-2 border ${errors[`guest${idx}Age`] ? 'border-red-400' : 'border-stone-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400/40 text-sm`}
+                          className={`w-full px-3 py-2 border ${errors[`guest${idx}Age`] ? 'border-red-400' : 'border-brand-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-100/40 text-sm`}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-stone-600 mb-1">Gender *</label>
+                        <label className="block text-xs font-bold text-black mb-1">Gender *</label>
                         <select
                           value={guest.sex}
                           onChange={(e) => updateGuest(guest.id, 'sex', e.target.value)}
-                          className={`w-full px-3 py-2 border ${errors[`guest${idx}Sex`] ? 'border-red-400' : 'border-stone-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400/40 text-sm`}
+                          className={`w-full px-3 py-2 border ${errors[`guest${idx}Sex`] ? 'border-red-400' : 'border-brand-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-100/40 text-sm`}
                         >
                           <option value="">Select</option>
                           <option value="Male">Male</option>
@@ -233,11 +233,11 @@ function BookingPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-stone-600 mb-1">Food Preference *</label>
+                        <label className="block text-xs font-bold text-black mb-1">Food Preference *</label>
                         <select
                           value={guest.foodPreference}
                           onChange={(e) => updateGuest(guest.id, 'foodPreference', e.target.value)}
-                          className={`w-full px-3 py-2 border ${errors[`guest${idx}Food`] ? 'border-red-400' : 'border-stone-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400/40 text-sm`}
+                          className={`w-full px-3 py-2 border ${errors[`guest${idx}Food`] ? 'border-red-400' : 'border-brand-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-100/40 text-sm`}
                         >
                           <option value="">Select</option>
                           <option value="Veg">Vegetarian</option>
@@ -253,7 +253,7 @@ function BookingPage() {
               {infantCount > 0 && (
                 <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-700">
-                    ℹ️ {infantCount} infant{infantCount > 1 ? 's' : ''} (under 2 years) - Separate seating not required
+                    {infantCount} infant{infantCount > 1 ? 's' : ''} (under 2 years) - Separate seating not required
                   </p>
                 </div>
               )}
@@ -262,35 +262,35 @@ function BookingPage() {
             {/* Seating Selection - Moved to separate component below */}
 
             {/* Payment Method */}
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl p-6 shadow-lg">
-              <h2 className="text-xl font-bold text-stone-800 mb-4">💳 Payment Method</h2>
+            <div className="bg-white  rounded-2xl p-6 shadow-md">
+              <h2 className="text-xl font-bold text-black mb-4">Payment Method</h2>
               <div className="space-y-3">
-                <label className="flex items-center gap-3 p-4 border-2 border-stone-200 rounded-xl cursor-pointer hover:border-amber-400/70 transition-colors">
+                <label className="flex items-center gap-3 p-4 border-2 border-brand-200 rounded-xl cursor-pointer hover:border-brand-600 transition-colors">
                   <input
                     type="radio"
                     name="payment"
                     value="card"
                     checked={bookingDetails.paymentMethod === 'card'}
                     onChange={(e) => setBookingDetails(prev => ({ ...prev, paymentMethod: e.target.value }))}
-                    className="w-5 h-5 text-amber-600"
+                    className="w-5 h-5 text-brand-900"
                   />
                   <div className="flex-1">
-                    <p className="font-semibold text-stone-800">Credit / Debit Card</p>
-                    <p className="text-sm text-stone-500">Secure payment via gateway</p>
+                    <p className="font-bold text-black">Credit / Debit Card</p>
+                    <p className="text-sm text-black font-medium">Secure payment via gateway</p>
                   </div>
                 </label>
-                <label className="flex items-center gap-3 p-4 border-2 border-stone-200 rounded-xl cursor-pointer hover:border-amber-400/70 transition-colors">
+                <label className="flex items-center gap-3 p-4 border-2 border-brand-200 rounded-xl cursor-pointer hover:border-brand-600 transition-colors">
                   <input
                     type="radio"
                     name="payment"
                     value="restaurant"
                     checked={bookingDetails.paymentMethod === 'restaurant'}
                     onChange={(e) => setBookingDetails(prev => ({ ...prev, paymentMethod: e.target.value }))}
-                    className="w-5 h-5 text-amber-600"
+                    className="w-5 h-5 text-brand-900"
                   />
                   <div className="flex-1">
-                    <p className="font-semibold text-stone-800">Pay at Restaurant</p>
-                    <p className="text-sm text-stone-500">Pay when you dine</p>
+                    <p className="font-bold text-black">Pay at Restaurant</p>
+                    <p className="text-sm text-black font-medium">Pay when you dine</p>
                   </div>
                 </label>
               </div>
@@ -303,8 +303,8 @@ function BookingPage() {
             <div className="sticky top-24 space-y-6">
               
               {/* Visual Seating Selection */}
-              <div className="bg-white/95 backdrop-blur-md rounded-2xl p-6 shadow-lg">
-                <h2 className="text-xl font-bold text-stone-800 mb-4">🪑 Select Table</h2>
+              <div className="bg-white  rounded-2xl p-6 shadow-md">
+                <h2 className="text-xl font-bold text-brand-900 mb-4">Select Table</h2>
                 {errors.seats && <p className="text-red-500 text-sm mb-2">{errors.seats}</p>}
                 <div className="space-y-3">
                   {restaurant.tabledescription.tableTypesAvailable.map((tableType, idx) => {
@@ -320,28 +320,28 @@ function BookingPage() {
                         disabled={!isAvailable}
                         className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
                           !isAvailable 
-                            ? 'bg-stone-100 border-stone-200 cursor-not-allowed opacity-50'
+                            ? 'bg-brand-100 border-brand-200 text-brand-600 cursor-not-allowed'
                             : isSelected
-                            ? 'bg-amber-50 border-amber-500 shadow-md'
-                            : 'border-stone-200 hover:border-amber-300 hover:shadow-sm'
+                            ? 'bg-brand-50 border-brand-600 shadow-md'
+                            : 'border-brand-200 hover:border-brand-100 hover:shadow-md'
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <p className="font-semibold text-stone-800">{tableType}</p>
+                          <p className="font-semibold text-brand-900">{tableType}</p>
                           <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                            isSelected ? 'bg-amber-600 border-amber-600' : 'border-stone-300'
+                            isSelected ? 'bg-brand-600 border-brand-600' : 'border-brand-200'
                           }`}>
                             {isSelected && (
-                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3 h-3 text-brand-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-stone-600">
-                          <span>👥 {capacity} seats</span>
-                          <span className={isAvailable ? 'text-green-600' : 'text-red-600'}>
-                            {isAvailable ? '✓ Available' : '✗ Booked'}
+                        <div className="flex items-center gap-4 text-sm text-brand-600">
+                          <span>{capacity} seats</span>
+                          <span className={isAvailable ? 'text-brand-600' : 'text-red-600'}>
+                            {isAvailable ? 'Available' : 'Booked'}
                           </span>
                         </div>
                       </button>
@@ -351,38 +351,38 @@ function BookingPage() {
               </div>
 
               {/* Booking Summary */}
-              <div className="bg-white/95 backdrop-blur-md rounded-2xl p-6 shadow-lg">
-                <h3 className="text-lg font-bold text-stone-800 mb-4">Booking Summary</h3>
+              <div className="bg-white  rounded-2xl p-6 shadow-md">
+                <h3 className="text-lg font-bold text-brand-900 mb-4">Booking Summary</h3>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-stone-600">Restaurant</span>
+                    <span className="text-brand-600">Restaurant</span>
                     <span className="font-semibold">{restaurant.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-stone-600">Total Guests</span>
+                    <span className="text-brand-600">Total Guests</span>
                     <span className="font-semibold">{totalGuests}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-stone-600">Tables Selected</span>
+                    <span className="text-brand-600">Tables Selected</span>
                     <span className="font-semibold">{bookingDetails.selectedSeats.length}</span>
                   </div>
                   <div className="flex justify-between pt-3 border-t">
-                    <span className="text-stone-600">Base Price</span>
+                    <span className="text-brand-600">Base Price</span>
                     <span className="font-semibold">₹{bookingDetails.selectedSeats.length * 500}</span>
                   </div>
-                  <div className="flex justify-between text-green-600">
+                  <div className="flex justify-between text-brand-600">
                     <span>Discount</span>
                     <span className="font-semibold">-₹{bookingDetails.selectedSeats.length * 50}</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold pt-3 border-t">
                     <span>Total</span>
-                    <span className="text-amber-600">₹{bookingDetails.selectedSeats.length * 450}</span>
+                    <span className="text-brand-900">₹{bookingDetails.selectedSeats.length * 450}</span>
                   </div>
                 </div>
                 
                 <button
                   onClick={handleProceedToPayment}
-                  className="w-full mt-6 py-4 bg-gradient-to-r from-amber-400/90 to-orange-500/90 text-white font-bold rounded-2xl hover:shadow-xl hover:from-amber-500/90 hover:to-orange-600/90 transition-all"
+                  className="w-full mt-6 py-4 bg-brand-200 text-brand-900 font-bold rounded-2xl hover:bg-brand-600 hover:text-white hover:shadow-lg transition-all"
                 >
                   Proceed to Payment
                 </button>
@@ -397,3 +397,7 @@ function BookingPage() {
 }
 
 export default BookingPage
+
+
+
+

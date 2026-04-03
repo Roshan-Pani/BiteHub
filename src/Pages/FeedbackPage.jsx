@@ -64,7 +64,7 @@ function FeedbackPage() {
 
   const StarRating = ({ value, onChange, label, hovered, onHover }) => (
     <div className="flex items-center gap-3">
-      <span className="text-sm font-medium text-stone-700 w-28">{label}</span>
+      <span className="text-sm font-bold text-black w-28">{label}</span>
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map((star) => (
           <button
@@ -78,8 +78,8 @@ function FeedbackPage() {
             <svg
               className={`w-8 h-8 ${
                 star <= (hovered || value)
-                  ? 'text-amber-400 fill-amber-400'
-                  : 'text-stone-300 fill-stone-300'
+                  ? 'text-black fill-black'
+                  : 'text-gray-300 fill-gray-300'
               }`}
               viewBox="0 0 24 24"
             >
@@ -88,7 +88,7 @@ function FeedbackPage() {
           </button>
         ))}
       </div>
-      <span className="text-sm text-stone-500 ml-2">
+      <span className="text-sm text-black ml-2 font-medium">
         {value > 0 ? `${value}/5` : 'Not rated'}
       </span>
     </div>
@@ -96,22 +96,22 @@ function FeedbackPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-stone-50/30">
+      <div className="min-h-screen bg-[#F2F2F0]">
         <Header />
         <main className="max-w-2xl mx-auto px-6 py-16">
-          <div className="bg-white/95 backdrop-blur-md rounded-3xl p-12 shadow-lg text-center">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white  rounded-3xl p-12 shadow-md text-center">
+            <div className="w-20 h-20 bg-brand-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h1 className="text-3xl font-bold text-stone-800 mb-4">Thank You for Your Feedback!</h1>
-            <p className="text-stone-600 mb-8">
+            <h1 className="text-3xl font-bold text-black mb-4">Thank You for Your Feedback!</h1>
+            <p className="text-black font-medium mb-8">
               Your review has been submitted successfully and will help other diners make informed decisions.
             </p>
             <button
               onClick={() => navigate('/')}
-              className="px-8 py-3 bg-gradient-to-r from-amber-400/90 to-orange-500/90 text-white font-bold rounded-xl hover:shadow-xl transition-all"
+              className="px-8 py-3 bg-accent-600 text-white font-bold rounded-xl hover:bg-brand-900 hover:text-white hover:shadow-lg transition-all"
             >
               Back to Home
             </button>
@@ -122,7 +122,7 @@ function FeedbackPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50/30">
+    <div className="min-h-screen bg-[#F2F2F0]">
       <Header />
       
       <main className="max-w-3xl mx-auto px-6 py-12">
@@ -131,22 +131,22 @@ function FeedbackPage() {
         <div className="mb-8">
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-stone-600 hover:text-stone-800 mb-4 transition-colors"
+            className="flex items-center gap-2 text-black hover:text-black mb-4 transition-colors font-semibold"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back
           </button>
-          <h1 className="text-3xl font-bold text-stone-800">Share Your Experience</h1>
-          <p className="text-stone-600 mt-2">Help others by sharing your dining experience</p>
+          <h1 className="text-3xl font-bold text-black">Share Your Experience</h1>
+          <p className="text-black font-medium mt-2">Help others by sharing your dining experience</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white/95 backdrop-blur-md rounded-3xl p-8 shadow-lg space-y-8">
+        <form onSubmit={handleSubmit} className="bg-white  rounded-3xl p-8 shadow-md space-y-8">
           
           {/* Overall Rating */}
           <div>
-            <h2 className="text-xl font-bold text-stone-800 mb-4">Overall Rating *</h2>
+            <h2 className="text-xl font-bold text-black mb-4">Overall Rating *</h2>
             <StarRating
               value={feedback.rating}
               onChange={(val) => setFeedback(prev => ({ ...prev, rating: val }))}
@@ -157,8 +157,8 @@ function FeedbackPage() {
           </div>
 
           {/* Detailed Ratings */}
-          <div className="pt-6 border-t border-stone-200">
-            <h2 className="text-xl font-bold text-stone-800 mb-4">Rate Specific Aspects</h2>
+          <div className="pt-6 border-t border-brand-200">
+            <h2 className="text-xl font-bold text-black mb-4">Rate Specific Aspects</h2>
             <div className="space-y-4">
               <StarRating
                 value={feedback.foodRating}
@@ -179,18 +179,18 @@ function FeedbackPage() {
           </div>
 
           {/* Written Review */}
-          <div className="pt-6 border-t border-stone-200">
-            <h2 className="text-xl font-bold text-stone-800 mb-2">Write Your Review</h2>
-            <p className="text-sm text-stone-500 mb-4">Maximum 500 words</p>
+          <div className="pt-6 border-t border-brand-200">
+            <h2 className="text-xl font-bold text-black mb-2">Write Your Review</h2>
+            <p className="text-sm text-black font-medium mb-4">Maximum 500 words</p>
             <textarea
               value={feedback.review}
               onChange={(e) => setFeedback(prev => ({ ...prev, review: e.target.value }))}
               placeholder="Share details of your experience..."
               maxLength={500}
               rows={6}
-              className="w-full px-4 py-3 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400/40 resize-none"
+              className="w-full px-4 py-3 border border-brand-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-100/40 resize-none"
             />
-            <div className="text-right text-sm text-stone-500 mt-2">
+            <div className="text-right text-sm text-black font-medium mt-2">
               {feedback.review.length} / 500 characters
             </div>
           </div>
@@ -218,13 +218,13 @@ function FeedbackPage() {
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="px-8 py-3 border-2 border-stone-300 text-stone-700 font-semibold rounded-xl hover:bg-stone-50 transition-all"
+              className="px-8 py-3 border-2 border-black text-black font-bold rounded-xl hover:bg-gray-100 transition-all"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 py-3 bg-gradient-to-r from-amber-400/90 to-orange-500/90 text-white font-bold rounded-xl hover:shadow-xl hover:from-amber-500/90 hover:to-orange-600/90 transition-all"
+              className="flex-1 py-3 bg-accent-600 text-white font-bold rounded-xl hover:bg-brand-900 hover:text-white hover:shadow-lg transition-all"
             >
               Submit Feedback
             </button>
@@ -236,3 +236,7 @@ function FeedbackPage() {
 }
 
 export default FeedbackPage
+
+
+
+

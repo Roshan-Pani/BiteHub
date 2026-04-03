@@ -113,7 +113,7 @@ function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50/30">
+    <div className="min-h-screen bg-[#F2F2F0]">
       <Header 
         searchQuery={searchQuery}
         onSearchChange={handleSearchChange}
@@ -124,24 +124,22 @@ function HomePage() {
         
         {/* Hero Banner Section */}
         <section className="mt-6 mb-8">
-          <div className="relative w-full h-64 rounded-3xl overflow-hidden shadow-lg bg-gradient-to-r from-amber-200/80 via-orange-300/70 to-amber-300/80">
-            {/* Background overlay with pattern */}
-            <div className="absolute inset-0 bg-black/20"></div>
+          <div className="page-hero">
             
             {/* Content */}
-            <div className="relative h-full flex flex-col justify-center px-12">
-              <h1 className="text-4xl md:text-5xl font-bold text-stone-800 mb-3">
+            <div className="page-hero__content">
+              <h1 className="page-hero__title">
                 Dine Out at the Best Restaurants
               </h1>
-              <p className="text-lg text-stone-700 max-w-xl">
+              <p className="page-hero__subtitle">
                 Discover amazing deals and offers at top-rated restaurants near you
               </p>
               <div className="mt-6 flex gap-4">
-                <div className="px-6 py-3 bg-white/70 backdrop-blur-sm rounded-full border border-white/50 shadow-sm">
-                  <span className="text-stone-700 font-medium">🎉 {filteredRestaurants.length} Restaurants</span>
+                <div className="px-6 py-3 bg-white rounded-full border border-black shadow-sm">
+                  <span className="text-black font-bold">{filteredRestaurants.length} Restaurants</span>
                 </div>
-                <div className="px-6 py-3 bg-white/70 backdrop-blur-sm rounded-full border border-white/50 shadow-sm">
-                  <span className="text-stone-700 font-medium">⚡ Instant Booking</span>
+                <div className="px-6 py-3 bg-white rounded-full border border-black shadow-sm">
+                  <span className="text-black font-bold">Instant Booking</span>
                 </div>
               </div>
             </div>
@@ -182,3 +180,7 @@ function HomePage() {
 }
 
 export default HomePage
+
+
+
+

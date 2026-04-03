@@ -45,22 +45,22 @@ function SingleRestaurantPopup({ restaurant, onClose }) {
   return (
     /* Modal Overlay */
     <div 
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      className="modal-overlay"
       onClick={handleOverlayClick}
     >
       
       {/* Modal Container */}
       <div 
-        className="relative w-full max-w-4xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden"
+        className="relative w-full max-w-4xl bg-white rounded-3xl border border-brand-200 shadow-lg overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         
         {/* Close Button */}
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white shadow-lg transition-all"
+          className="absolute top-4 right-4 z-10 w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-brand-50 shadow-sm border border-brand-200 transition-all"
         >
-          <svg className="w-6 h-6 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -77,7 +77,7 @@ function SingleRestaurantPopup({ restaurant, onClose }) {
             />
             
             {/* Rating Badge */}
-            <div className="absolute top-4 left-4 px-4 py-2 bg-green-600/90 text-white text-base font-bold rounded-xl flex items-center gap-2 shadow-lg">
+            <div className="absolute top-4 left-4 px-4 py-2 bg-brand-600 text-white text-base font-bold rounded-xl flex items-center gap-2 shadow-md">
               <span>⭐</span>
               <span>{restaurant.rating.toFixed(1)}</span>
             </div>
@@ -85,19 +85,19 @@ function SingleRestaurantPopup({ restaurant, onClose }) {
             {/* Veg/Non-Veg Badge */}
             <div className="absolute top-4 right-4">
               {restaurant.isVegOnly ? (
-                <div className="px-4 py-2 bg-green-600/90 text-white text-sm font-bold rounded-xl shadow-lg">
-                  🌱 Pure Veg
+                <div className="px-4 py-2 bg-brand-600 text-white text-sm font-bold rounded-xl shadow-md">
+                  Pure Veg
                 </div>
               ) : (
-                <div className="px-4 py-2 bg-red-600/90 text-white text-sm font-bold rounded-xl shadow-lg">
-                  🍗 Non-Veg
+                <div className="px-4 py-2 bg-red-600 text-white text-sm font-bold rounded-xl shadow-md">
+                  Non-Veg
                 </div>
               )}
             </div>
             
             {/* Image Gallery Indicator */}
-            <div className="absolute bottom-4 right-4 px-4 py-2 bg-black/60 backdrop-blur-sm text-white text-sm rounded-lg">
-              📷 View Gallery ({restaurant.images.length})
+            <div className="absolute bottom-4 right-4 px-4 py-2 bg-brand-900 text-white text-sm rounded-lg">
+              View Gallery ({restaurant.images.length})
             </div>
           </div>
           
@@ -106,19 +106,19 @@ function SingleRestaurantPopup({ restaurant, onClose }) {
             
             {/* Restaurant Name & Info */}
             <div className="mb-6">
-              <h2 className="text-3xl font-bold text-stone-800 mb-2">
+              <h2 className="text-4xl font-bold text-black mb-2">
                 {restaurant.name}
               </h2>
-              <p className="text-gray-600 mb-3">
+              <p className="text-black font-semibold mb-3">
                 {restaurant.cuisine.name} • {restaurant.cuisine.description}
               </p>
               
               {/* Location */}
-              <div className="flex items-start gap-2 text-stone-500">
+              <div className="flex items-start gap-2 text-black">
                 <svg className="w-5 h-5 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 </svg>
-                <span className="text-sm">
+                <span className="text-sm font-medium">
                   {restaurant.location.specialIdentification}, {restaurant.location.city}, {restaurant.location.state} - {restaurant.location.pin}
                 </span>
               </div>
@@ -126,12 +126,12 @@ function SingleRestaurantPopup({ restaurant, onClose }) {
             
             {/* Special Message/Offer Banner */}
             {restaurant.specialMessages && (
-              <div className="mb-6 p-4 bg-gradient-to-r from-amber-50/80 to-orange-50/70 rounded-2xl border border-amber-200/50">
-                <div className="flex items-center gap-2 text-amber-700 font-semibold mb-1">
-                  <span className="text-lg">🎉</span>
+              <div className="mb-6 p-4 bg-brand-50 rounded-2xl border border-brand-200">
+                <div className="flex items-center gap-2 text-black font-bold mb-1">
+                  <span>🎉</span>
                   <span>Special Info</span>
                 </div>
-                <p className="text-sm text-amber-700">
+                <p className="text-sm text-black font-medium">
                   {restaurant.specialMessages}
                 </p>
               </div>
@@ -140,12 +140,12 @@ function SingleRestaurantPopup({ restaurant, onClose }) {
             {/* Quick Info */}
             <div className="mb-6 space-y-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-50/80 rounded-full flex items-center justify-center">
-                  <span className="text-lg">�</span>
+                <div className="w-10 h-10 bg-brand-50 rounded-full flex items-center justify-center">
+                  <span className="text-lg">🕒</span>
                 </div>
                 <div>
-                  <p className="text-xs text-stone-500">Opening Hours</p>
-                  <p className="font-semibold text-stone-800">
+                  <p className="text-xs font-bold text-black uppercase tracking-wide">Opening Hours</p>
+                  <p className="font-bold text-black">
                     {restaurant.openingTime} - {restaurant.closingTime}
                   </p>
                 </div>
@@ -153,12 +153,12 @@ function SingleRestaurantPopup({ restaurant, onClose }) {
               
               {restaurant.offDays.length > 0 && (
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-red-50/80 rounded-full flex items-center justify-center">
+                  <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center">
                     <span className="text-lg">🚫</span>
                   </div>
                   <div>
-                    <p className="text-xs text-stone-500">Off Days</p>
-                    <p className="font-semibold text-stone-800">
+                    <p className="text-xs font-bold text-black uppercase tracking-wide">Off Days</p>
+                    <p className="font-bold text-black">
                       {restaurant.offDays.join(', ')}
                     </p>
                   </div>
@@ -166,12 +166,12 @@ function SingleRestaurantPopup({ restaurant, onClose }) {
               )}
               
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-50/80 rounded-full flex items-center justify-center">
+                <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center">
                   <span className="text-lg">❄️</span>
                 </div>
                 <div>
-                  <p className="text-xs text-stone-500">Facilities</p>
-                  <p className="font-semibold text-stone-800">
+                  <p className="text-xs font-bold text-black uppercase tracking-wide">Facilities</p>
+                  <p className="font-bold text-black">
                     {restaurant.hasAC ? 'AC Available' : 'Non-AC'}, {restaurant.tabledescription.tableTypesAvailable.join(', ')}
                   </p>
                 </div>
@@ -190,7 +190,7 @@ function SingleRestaurantPopup({ restaurant, onClose }) {
                     navigate('/login', { state: { from: `/booking/${restaurant.id}` } })
                   }
                 }}
-                className="w-full py-3.5 bg-gradient-to-r from-amber-400/90 to-orange-500/90 text-white font-semibold rounded-2xl hover:shadow-lg hover:from-amber-500/90 hover:to-orange-600/90 transition-all"
+                className="w-full py-3.5 bg-accent-600 text-white font-bold rounded-2xl hover:bg-brand-900 hover:shadow-lg transition-all"
               >
                 {isAuthenticated ? 'Book a Table Now' : 'Sign In to Book'}
               </button>
@@ -199,7 +199,7 @@ function SingleRestaurantPopup({ restaurant, onClose }) {
                   navigate(`/restaurant/${restaurant.id}`)
                   onClose()
                 }}
-                className="w-full py-3.5 bg-stone-100/80 text-stone-700 font-semibold rounded-2xl hover:bg-stone-200/80 transition-all"
+                className="w-full py-3.5 bg-white text-black font-bold border-2 border-black rounded-2xl hover:bg-brand-50 transition-all"
               >
                 View Full Details
               </button>
@@ -213,3 +213,7 @@ function SingleRestaurantPopup({ restaurant, onClose }) {
 }
 
 export default SingleRestaurantPopup
+
+
+
+

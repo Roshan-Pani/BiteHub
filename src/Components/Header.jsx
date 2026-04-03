@@ -9,16 +9,16 @@ function Header({ searchQuery, onSearchChange }) {
   const { isAuthenticated } = useAuth()
   
   return (
-    <header className="sticky top-0 z-[100] bg-white/95 backdrop-blur-md border-b border-stone-200 shadow-sm">
-      <div className="max-w-[1280px] mx-auto px-6">
-        <div className="flex items-center justify-between h-[70px] gap-6">
+    <header className="site-header">
+      <div className="page-container">
+        <div className="site-header__inner">
           {/* Left Section: Logo */}
-          <div className="flex-shrink-0">
+          <div className="site-header__brand">
             <Logo />
           </div>
           
           {/* Center Section: Search Bar */}
-          <div className="flex-1 max-w-xl">
+          <div className="search-shell">
             <SearchBar 
               searchQuery={searchQuery}
               onSearchChange={onSearchChange}
@@ -26,7 +26,7 @@ function Header({ searchQuery, onSearchChange }) {
           </div>
           
           {/* Right Section: Auth & Profile */}
-          <div className="flex items-center gap-4 flex-shrink-0">
+          <div className="header-actions">
             {!isAuthenticated ? (
               <AuthButton />
             ) : (
@@ -40,3 +40,7 @@ function Header({ searchQuery, onSearchChange }) {
 }
 
 export default Header;
+
+
+
+

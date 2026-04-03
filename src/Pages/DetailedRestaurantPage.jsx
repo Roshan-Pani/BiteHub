@@ -32,29 +32,28 @@ function DetailedRestaurantPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50/30">
+    <div className="min-h-screen bg-[#F2F2F0]">
       <Header />
       
       {/* Hero Section with Image Banner */}
-      <section className="relative w-full h-96 bg-stone-800">
+      <section className="relative w-full h-96 bg-brand-900">
         {/* Background Image */}
         <div className="absolute inset-0">
           <img
             src={getFallbackImage(restaurant.cuisine.name)}
             alt={restaurant.name}
-            className="w-full h-full object-cover opacity-90"
+            className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
         </div>
         
         {/* Floating Info Card */}
         <div className="relative max-w-[1280px] mx-auto px-6 h-full flex items-end pb-8">
-          <div className="bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl p-8 max-w-2xl w-full transform translate-y-12">
+          <div className="bg-white  rounded-3xl shadow-md p-8 max-w-2xl w-full transform translate-y-12">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h1 className="text-4xl font-bold text-stone-800 mb-2">{restaurant.name}</h1>
-                <p className="text-gray-600 mb-3">{restaurant.cuisine.name} • {restaurant.cuisine.description}</p>
-                <div className="flex items-center gap-2 text-stone-500">
+                <h1 className="text-4xl font-bold text-black mb-2">{restaurant.name}</h1>
+                <p className="text-black font-semibold mb-3">{restaurant.cuisine.name} • {restaurant.cuisine.description}</p>
+                <div className="flex items-center gap-2 text-black">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   </svg>
@@ -63,25 +62,24 @@ function DetailedRestaurantPage() {
               </div>
               
               {/* Rating */}
-              <div className="px-5 py-3 bg-green-600/90 text-white text-xl font-bold rounded-2xl flex items-center gap-2 shadow-lg">
-                <span>⭐</span>
+              <div className="px-5 py-3 bg-accent-600 text-white text-xl font-bold rounded-2xl flex items-center gap-2 shadow-md">
                 <span>{restaurant.rating.toFixed(1)}</span>
               </div>
             </div>
             
             {/* Quick Stats */}
-            <div className="flex gap-6 pt-4 border-t border-stone-100">
+            <div className="flex gap-6 pt-4 border-t border-black">
               <div>
-                <p className="text-xs text-stone-500 mb-1">Type</p>
-                <p className="font-bold text-stone-800">{restaurant.isVegOnly ? 'Pure Veg' : 'Veg & Non-Veg'}</p>
+                <p className="text-xs font-bold text-black uppercase tracking-wide mb-1">Type</p>
+                <p className="font-bold text-black">{restaurant.isVegOnly ? 'Pure Veg' : 'Veg & Non-Veg'}</p>
               </div>
-              <div className="border-l border-stone-200 pl-6">
-                <p className="text-xs text-stone-500 mb-1">Status</p>
-                <p className="font-bold text-green-600">Open Now</p>
+              <div className="border-l border-black pl-6">
+                <p className="text-xs font-bold text-black uppercase tracking-wide mb-1">Status</p>
+                <p className="font-bold text-black">Open Now</p>
               </div>
-              <div className="border-l border-stone-200 pl-6">
-                <p className="text-xs text-stone-500 mb-1">Timings</p>
-                <p className="font-bold text-stone-800">{restaurant.openingTime} - {restaurant.closingTime}</p>
+              <div className="border-l border-black pl-6">
+                <p className="text-xs font-bold text-black uppercase tracking-wide mb-1">Timings</p>
+                <p className="font-bold text-black">{restaurant.openingTime} - {restaurant.closingTime}</p>
               </div>
             </div>
           </div>
@@ -92,18 +90,18 @@ function DetailedRestaurantPage() {
       <main className="max-w-[1280px] mx-auto px-6 mt-20">
         
         {/* Tab Navigation */}
-        <div className="mb-8 border-b border-stone-200">
+        <div className="mb-8 border-b border-brand-200">
           <div className="flex gap-8">
-            <button className="pb-4 text-amber-600 font-semibold border-b-2 border-amber-500">
+            <button className="pb-4 text-brand-900 font-semibold border-b-2 border-brand-600">
               Dine Out
             </button>
-            <button className="pb-4 text-stone-500 font-medium hover:text-stone-700">
+            <button className="pb-4 text-brand-600 font-medium hover:text-brand-900">
               Photos ({restaurant.images.length})
             </button>
-            <button className="pb-4 text-stone-500 font-medium hover:text-stone-700">
+            <button className="pb-4 text-brand-600 font-medium hover:text-brand-900">
               Menu
             </button>
-            <button className="pb-4 text-stone-500 font-medium hover:text-stone-700">
+            <button className="pb-4 text-brand-600 font-medium hover:text-brand-900">
               Reviews
             </button>
           </div>
@@ -116,39 +114,36 @@ function DetailedRestaurantPage() {
             
             {/* Offers Section */}
             {restaurant.specialMessages && (
-              <section className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm">
-                <h2 className="text-xl font-bold text-stone-800 mb-4 flex items-center gap-2">
-                  <span className="text-2xl">🎉</span>
+              <section className="bg-white  rounded-2xl p-6 shadow-md">
+                <h2 className="text-xl font-bold text-black mb-4 flex items-center gap-2">
                   Special Info
                 </h2>
-                <div className="p-4 bg-gradient-to-r from-amber-50/80 to-orange-50/70 rounded-xl border border-amber-200/50">
-                  <p className="font-semibold text-amber-700 mb-1">{restaurant.specialMessages}</p>
+                <div className="p-4 bg-brand-50 rounded-xl border border-brand-200">
+                  <p className="font-bold text-black mb-1">{restaurant.specialMessages}</p>
                 </div>
               </section>
             )}
             
             {/* Cuisine & Features */}
-            <section className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm">
-              <h2 className="text-xl font-bold text-stone-800 mb-4">Cuisine & Features</h2>
+            <section className="bg-white  rounded-2xl p-6 shadow-md">
+              <h2 className="text-xl font-bold text-black mb-4">Cuisine & Features</h2>
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-stone-500 mb-2">Specialties</p>
+                  <p className="text-sm text-black font-bold uppercase tracking-wide mb-2">Specialties</p>
                   <div className="flex flex-wrap gap-2">
-                    <span className="px-4 py-2 bg-amber-50/80 text-amber-700 rounded-full text-sm font-medium">{restaurant.cuisine.name}</span>
+                    <span className="px-4 py-2 bg-brand-50 text-black rounded-full text-sm font-bold">{restaurant.cuisine.name}</span>
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm text-stone-500 mb-2">Facilities</p>
+                  <p className="text-sm text-black font-bold uppercase tracking-wide mb-2">Facilities</p>
                   <div className="grid grid-cols-2 gap-3">
                     {restaurant.hasAC && (
-                      <div className="flex items-center gap-2 text-stone-700">
-                        <span className="text-green-600">✓</span>
+                      <div className="flex items-center gap-2 text-black font-semibold">
                         <span className="text-sm">AC Available</span>
                       </div>
                     )}
                     {restaurant.tabledescription.tableTypesAvailable.map((type, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-stone-700">
-                        <span className="text-green-600">✓</span>
+                      <div key={idx} className="flex items-center gap-2 text-black font-semibold">
                         <span className="text-sm">{type}</span>
                       </div>
                     ))}
@@ -158,22 +153,22 @@ function DetailedRestaurantPage() {
             </section>
             
             {/* Location Section */}
-            <section className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm">
-              <h2 className="text-xl font-bold text-stone-800 mb-4">Location & Contact</h2>
+            <section className="bg-white  rounded-2xl p-6 shadow-md">
+              <h2 className="text-xl font-bold text-black mb-4">Location & Contact</h2>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-stone-400 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-brand-200 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   </svg>
                   <div>
-                    <p className="text-stone-700">{restaurant.location.specialIdentification}</p>
-                    <p className="text-sm text-stone-500">{restaurant.location.city}, {restaurant.location.state} - {restaurant.location.pin}</p>
+                    <p className="text-black font-bold">{restaurant.location.specialIdentification}</p>
+                    <p className="text-sm text-black font-medium">{restaurant.location.city}, {restaurant.location.state} - {restaurant.location.pin}</p>
                   </div>
                 </div>
                 
                 {/* Map Placeholder */}
-                <div className="w-full h-48 bg-stone-100/50 rounded-xl flex items-center justify-center">
-                  <div className="text-center text-stone-400">
+                <div className="w-full h-48 bg-brand-100 rounded-xl flex items-center justify-center">
+                  <div className="text-center text-brand-200">
                     <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                     </svg>
@@ -187,46 +182,46 @@ function DetailedRestaurantPage() {
           
           {/* Right Column: Booking Card */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24 bg-white/95 backdrop-blur-md rounded-2xl p-6 shadow-lg">
-              <h3 className="text-lg font-bold text-stone-800 mb-6">Reserve Your Table</h3>
+            <div className="sticky top-24 bg-white  rounded-2xl p-6 shadow-md">
+              <h3 className="text-lg font-bold text-black mb-6">🍽️ Reserve Your Table</h3>
               
               {/* Booking Form UI */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-2">Select Date</label>
-                  <div className="p-3 border border-stone-200 rounded-xl hover:border-amber-300/70 transition-colors cursor-pointer">
-                    <span className="text-stone-600">📅 Feb 20, 2026</span>
+                  <label className="block text-sm font-bold text-black mb-2">Select Date</label>
+                  <div className="p-3 border border-black rounded-xl hover:border-black transition-colors cursor-pointer">
+                    <span className="text-black font-semibold">📅 Feb 20, 2026</span>
                   </div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-2">Select Time</label>
-                  <div className="p-3 border border-stone-200 rounded-xl hover:border-amber-300/70 transition-colors cursor-pointer">
-                    <span className="text-stone-600">🕐 7:30 PM</span>
+                  <label className="block text-sm font-bold text-black mb-2">Select Time</label>
+                  <div className="p-3 border border-black rounded-xl hover:border-black transition-colors cursor-pointer">
+                    <span className="text-black font-semibold">🕐 7:30 PM</span>
                   </div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-2">Guests</label>
-                  <div className="p-3 border border-stone-200 rounded-xl hover:border-amber-300/70 transition-colors cursor-pointer">
-                    <span className="text-stone-600">👥 2 People</span>
+                  <label className="block text-sm font-bold text-black mb-2">Guests</label>
+                  <div className="p-3 border border-brand-200 rounded-xl hover:border-brand-200 transition-colors cursor-pointer">
+                    <span className="text-brand-600">👥 2 People</span>
                   </div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-stone-700 mb-2">Table Type</label>
+                  <label className="block text-sm font-medium text-brand-900 mb-2">Table Type</label>
                   <div className="grid grid-cols-2 gap-2">
                     {restaurant.tabledescription.tableTypesAvailable.slice(0, 2).map((type, idx) => (
                       <div 
                         key={idx}
                         className={`p-3 rounded-xl text-center cursor-pointer ${
                           idx === 0 
-                            ? 'border-2 border-amber-500/70 bg-amber-50/50' 
-                            : 'border border-stone-200 hover:border-amber-300/70'
+                            ? 'border-2 border-brand-600 bg-brand-50' 
+                            : 'border border-brand-200 hover:border-brand-600'
                         }`}
                       >
                         <p className={`text-sm font-semibold ${
-                          idx === 0 ? 'text-amber-700' : 'text-stone-600'
+                          idx === 0 ? 'text-brand-900' : 'text-brand-600'
                         }`}>{type}</p>
                       </div>
                     ))}
@@ -234,18 +229,18 @@ function DetailedRestaurantPage() {
                 </div>
                 
                 {/* Price Summary */}
-                <div className="pt-4 border-t border-stone-100">
+                <div className="pt-4 border-t border-brand-100">
                   <div className="flex justify-between mb-2">
-                    <span className="text-stone-600">Base Price</span>
+                    <span className="text-brand-600">Base Price</span>
                     <span className="font-semibold">₹800</span>
                   </div>
-                  <div className="flex justify-between text-green-600 mb-2">
+                  <div className="flex justify-between text-brand-600 mb-2">
                     <span>Discount (10%)</span>
                     <span className="font-semibold">-₹80</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold pt-2 border-t">
                     <span>Total</span>
-                    <span className="text-amber-600">₹720</span>
+                    <span className="text-brand-900">₹720</span>
                   </div>
                 </div>
                 
@@ -258,7 +253,7 @@ function DetailedRestaurantPage() {
                       navigate('/login', { state: { from: `/booking/${restaurant.id}` } })
                     }
                   }}
-                  className="w-full py-4 bg-gradient-to-r from-amber-400/90 to-orange-500/90 text-white font-bold rounded-2xl hover:shadow-xl hover:from-amber-500/90 hover:to-orange-600/90 transition-all"
+                  className="w-full py-4 bg-brand-200 text-brand-900 font-bold rounded-2xl hover:bg-brand-600 hover:text-white hover:shadow-lg transition-all"
                 >
                   {isAuthenticated ? 'Confirm Booking' : 'Sign In to Book'}
                 </button>
@@ -273,3 +268,7 @@ function DetailedRestaurantPage() {
 }
 
 export default DetailedRestaurantPage
+
+
+
+
