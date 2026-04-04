@@ -1,12 +1,14 @@
 import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useReservationData } from '../context/ReservationDataContext'
 import Header from '../Components/Header'
 
 function FeedbackPage() {
   const { bookingId } = useParams()
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuth()
+  const { getBookingById, canSubmitFeedback, countWords, submitFeedbackOnce } = useReservationData()
 
   const [feedback, setFeedback] = useState({
     rating: 0,
@@ -18,6 +20,9 @@ function FeedbackPage() {
 
   const [hoveredStar, setHoveredStar] = useState(0)
   const [submitted, setSubmitted] = useState(false)
+
+  const booking = getBookingById(bookingId)
+  const feedbackGate = canSubmitFeedback({ booking, userId: user?.id })
 
   // Check if user is authenticated
   if (!isAuthenticated) {
@@ -34,37 +39,49 @@ function FeedbackPage() {
       return
     }
 
-    if (feedback.review.length > 500) {
-      alert('Review must be less than 500 words')
+    if (countWords(feedback.review) > 500) {
+      alert('Review must be 500 words or fewer')
       return
     }
 
-    // Store feedback
-    const feedbackData = {
-      bookingId,
-      userId: user.email,
-      userName: user.name,
-      ...feedback,
-      submittedAt: new Date().toISOString()
+    const result = submitFeedbackOnce({
+      booking,
+      user,
+      payload: feedback
+    })
+
+    if (!result.ok) {
+      alert(result.error)
+      return
     }
-
-    // Save to localStorage (in production, this would be an API call)
-    const existingFeedbacks = JSON.parse(localStorage.getItem('feedbacks') || '[]')
-    existingFeedbacks.push(feedbackData)
-    localStorage.setItem('feedbacks', JSON.stringify(existingFeedbacks))
-
-    // Mark booking as feedback submitted
-    const bookingKey = `booking-${bookingId}`
-    const bookingData = JSON.parse(localStorage.getItem(bookingKey) || '{}')
-    bookingData.feedbackSubmitted = true
-    localStorage.setItem(bookingKey, JSON.stringify(bookingData))
 
     setSubmitted(true)
   }
 
+  if (!booking || !feedbackGate.allowed) {
+    return (
+      <div className="min-h-screen bg-[#F2F2F0]">
+        <Header />
+        <main className="max-w-2xl mx-auto px-6 py-16">
+          <div className="bg-white rounded-3xl p-10 shadow-md text-center">
+            <h1 className="text-2xl font-bold text-black mb-3">Feedback Not Available</h1>
+            <p className="text-black/70 mb-8">{feedbackGate.reason || 'This booking is not eligible for feedback.'}</p>
+            <button
+              type="button"
+              onClick={() => navigate('/my-bookings')}
+              className="px-8 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700"
+            >
+              Back to My Bookings
+            </button>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   const StarRating = ({ value, onChange, label, hovered, onHover }) => (
     <div className="flex items-center gap-3">
-      <span className="text-sm font-bold text-black w-28">{label}</span>
+      <span className="text-base font-bold text-black w-32">{label}</span>
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map((star) => (
           <button
@@ -76,7 +93,7 @@ function FeedbackPage() {
             className="transition-transform hover:scale-110"
           >
             <svg
-              className={`w-8 h-8 ${
+              className={`w-10 h-10 ${
                 star <= (hovered || value)
                   ? 'text-black fill-black'
                   : 'text-gray-300 fill-gray-300'
@@ -88,7 +105,7 @@ function FeedbackPage() {
           </button>
         ))}
       </div>
-      <span className="text-sm text-black ml-2 font-medium">
+      <span className="text-base text-black ml-2 font-medium">
         {value > 0 ? `${value}/5` : 'Not rated'}
       </span>
     </div>
@@ -131,22 +148,22 @@ function FeedbackPage() {
         <div className="mb-8">
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-black hover:text-black mb-4 transition-colors font-semibold"
+            className="flex items-center gap-2 text-black hover:text-black mb-4 transition-colors font-semibold text-lg"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back
           </button>
-          <h1 className="text-3xl font-bold text-black">Share Your Experience</h1>
-          <p className="text-black font-medium mt-2">Help others by sharing your dining experience</p>
+          <h1 className="text-4xl font-bold text-black">Share Your Experience</h1>
+          <p className="text-black font-medium mt-2 text-lg">Help others by sharing your dining experience</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white  rounded-3xl p-8 shadow-md space-y-8">
           
           {/* Overall Rating */}
           <div>
-            <h2 className="text-xl font-bold text-black mb-4">Overall Rating *</h2>
+            <h2 className="text-2xl font-bold text-black mb-4">Overall Rating *</h2>
             <StarRating
               value={feedback.rating}
               onChange={(val) => setFeedback(prev => ({ ...prev, rating: val }))}
@@ -158,7 +175,7 @@ function FeedbackPage() {
 
           {/* Detailed Ratings */}
           <div className="pt-6 border-t border-brand-200">
-            <h2 className="text-xl font-bold text-black mb-4">Rate Specific Aspects</h2>
+            <h2 className="text-2xl font-bold text-black mb-4">Rate Specific Aspects</h2>
             <div className="space-y-4">
               <StarRating
                 value={feedback.foodRating}
@@ -180,18 +197,17 @@ function FeedbackPage() {
 
           {/* Written Review */}
           <div className="pt-6 border-t border-brand-200">
-            <h2 className="text-xl font-bold text-black mb-2">Write Your Review</h2>
-            <p className="text-sm text-black font-medium mb-4">Maximum 500 words</p>
+            <h2 className="text-2xl font-bold text-black mb-2">Write Your Review</h2>
+            <p className="text-base text-black font-medium mb-4">Maximum 500 words</p>
             <textarea
               value={feedback.review}
               onChange={(e) => setFeedback(prev => ({ ...prev, review: e.target.value }))}
               placeholder="Share details of your experience..."
-              maxLength={500}
               rows={6}
-              className="w-full px-4 py-3 border border-brand-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-100/40 resize-none"
+              className="w-full px-4 py-3 border border-brand-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-100/40 resize-none text-base"
             />
-            <div className="text-right text-sm text-black font-medium mt-2">
-              {feedback.review.length} / 500 characters
+            <div className="text-right text-base text-black font-medium mt-2">
+              {countWords(feedback.review)} / 500 words
             </div>
           </div>
 
@@ -202,8 +218,8 @@ function FeedbackPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div>
-                <p className="text-sm text-blue-800 font-semibold mb-1">Important Information</p>
-                <ul className="text-sm text-blue-700 space-y-1">
+                <p className="text-base text-blue-800 font-semibold mb-1">Important Information</p>
+                <ul className="text-base text-blue-700 space-y-1">
                   <li>• Feedback can only be submitted once per booking</li>
                   <li>• Only registered users can submit feedback</li>
                   <li>• Your review will be visible to other users</li>
@@ -218,13 +234,13 @@ function FeedbackPage() {
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="px-8 py-3 border-2 border-black text-black font-bold rounded-xl hover:bg-gray-100 transition-all"
+              className="px-8 py-3 border-2 border-black text-black font-bold rounded-xl hover:bg-gray-100 transition-all text-lg"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 py-3 bg-accent-600 text-white font-bold rounded-xl hover:bg-brand-900 hover:text-white hover:shadow-lg transition-all"
+              className="flex-1 py-3 bg-accent-600 text-white font-bold rounded-xl hover:bg-brand-900 hover:text-white hover:shadow-lg transition-all text-lg"
             >
               Submit Feedback
             </button>

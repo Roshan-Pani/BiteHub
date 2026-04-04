@@ -36,6 +36,11 @@ function SingleRestaurantPopup({ restaurant, onClose }) {
     return cuisineImages[cuisineName] || cuisineImages.default
   }
 
+  const handleImageError = (event, cuisineName) => {
+    event.currentTarget.onerror = null
+    event.currentTarget.src = getFallbackImage(cuisineName)
+  }
+
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
       onClose()
@@ -71,9 +76,10 @@ function SingleRestaurantPopup({ restaurant, onClose }) {
           {/* Left Section: Image */}
           <div className="relative md:w-1/2 h-64 md:h-auto">
             <img
-              src={getFallbackImage(restaurant.cuisine.name)}
+              src={restaurant.images?.[0] || getFallbackImage(restaurant.cuisine.name)}
               alt={restaurant.name}
               className="w-full h-full object-cover"
+              onError={(event) => handleImageError(event, restaurant.cuisine.name)}
             />
             
             {/* Rating Badge */}

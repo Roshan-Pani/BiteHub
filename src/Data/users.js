@@ -1,7 +1,10 @@
+// User records provide the app with example profiles for authentication,
+// bookings, and review ownership. The mix of authenticated and guest-style
+// users helps the UI show login, profile, and account-related states.
 export const users = [
   {
     id: "U1",
-    name: "Roshan Patel",
+    name: "Roshan Pani",
     email: "roshan@email.com",
     phone: "9876543210",
     address: "Bhubaneswar, Odisha",

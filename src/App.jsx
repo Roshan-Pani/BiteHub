@@ -1,6 +1,9 @@
 // Imports
+import React, { useEffect } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { ReservationDataProvider } from './context/ReservationDataContext'
+import { purgeExpiredRuntimeData } from './services/runtimeDataLifecycleService'
 
 // Pages
 import HomePage from './Pages/HomePage'
@@ -9,6 +12,7 @@ import DetailedRestaurantPage from './Pages/DetailedRestaurantPage'
 import BookingPage from './Pages/BookingPage'
 import PaymentPage from './Pages/PaymentPage'
 import FeedbackPage from './Pages/FeedbackPage'
+import MyBookingsPage from './Pages/MyBookingsPage'
 
 // Components
 import ProtectedRoute from './Components/ProtectedRoute'
@@ -50,14 +54,28 @@ const router = createBrowserRouter([
         <FeedbackPage />
       </ProtectedRoute>
     )
+  },
+  {
+    path: "/my-bookings",
+    element: (
+      <ProtectedRoute>
+        <MyBookingsPage />
+      </ProtectedRoute>
+    )
   }
 ])
 
 // App Shell
 function App() {
+  useEffect(() => {
+    purgeExpiredRuntimeData()
+  }, [])
+
   return (
     <AuthProvider>
-      <RouterProvider router={router} />
+      <ReservationDataProvider>
+        <RouterProvider router={router} />
+      </ReservationDataProvider>
     </AuthProvider>
   )
 }

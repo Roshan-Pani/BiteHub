@@ -4,6 +4,7 @@ import FilterPanel from '../Components/FilterPanel'
 import RestaurantCards from '../Components/RestaurantCards'
 import SingleRestaurantPopup from '../Components/SingleRestaurantPopup'
 import { restaurants } from '../Data/restaurants'
+import { filterRestaurants } from '../utils/filterRestaurants'
 
 function HomePage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -18,49 +19,10 @@ function HomePage() {
   })
   const [selectedRestaurant, setSelectedRestaurant] = useState(null)
 
-  // Filter restaurants based on search and active filters
-  const filteredRestaurants = restaurants.filter(restaurant => {
-    // Search filter
-    const matchesSearch = searchQuery === '' || 
-      restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      restaurant.cuisine.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      restaurant.location.city.toLowerCase().includes(searchQuery.toLowerCase())
-
-    // Top Rated filter (rating >= 4.5)
-    const matchesTopRated = !activeFilters.topRated || restaurant.rating >= 4.5
-
-    // Pure Veg filter
-    const matchesPureVeg = !activeFilters.pureVeg || restaurant.isVegOnly === true
-
-    // AC Available filter
-    const matchesAC = !activeFilters.acAvailable || restaurant.hasAC === true
-
-    // Location filter
-    const matchesLocation = activeFilters.location === 'all' || 
-      restaurant.location.city.toLowerCase() === activeFilters.location.toLowerCase()
-
-    // Date filter (just check if restaurant is open on that day of week)
-    const matchesDate = !activeFilters.date || (() => {
-      const selectedDate = new Date(activeFilters.date)
-      const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' })
-      return !restaurant.offDays.includes(dayName)
-    })()
-
-    // Time filter (check if within opening hours)
-    const matchesTime = activeFilters.time === 'Any Time' || (() => {
-      // Simplified check - in production, you'd parse and compare times properly
-      return true // For now, assume all restaurants match
-    })()
-
-    // Meal type filter (if any selected, restaurant must support at least one)
-    const matchesMealType = activeFilters.mealTypes.length === 0 || (() => {
-      // For now, assume all restaurants serve all meal types
-      // In production, you'd check restaurant.mealTypes array
-      return true
-    })()
-
-    return matchesSearch && matchesTopRated && matchesPureVeg && matchesAC && 
-           matchesLocation && matchesDate && matchesTime && matchesMealType
+  const filteredRestaurants = filterRestaurants({
+    restaurants,
+    searchQuery,
+    activeFilters
   })
 
   const handleSearchChange = (query) => {

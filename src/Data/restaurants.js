@@ -1,4 +1,4 @@
-export const restaurants = [
+const seedRestaurants = [
   {
     id: "R1",
     name: "Spice Garden",
@@ -800,3 +800,270 @@ export const restaurants = [
     specialMessages: "Sunset dining experience"
   }
 ];
+
+// Base calendar labels used to compute availability and off-day logic.
+// These names are reused when we derive service days from the seeded data
+// and when we generate realistic booking windows for the synthetic restaurants.
+const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+// Each cuisine entry defines the display name, the short explanation shown in UI,
+// and whether the restaurant is mostly vegetarian-friendly.
+// The generator uses this catalog so the synthetic restaurants still feel grounded
+// in real restaurant types rather than random names.
+const cuisineCatalog = [
+  { name: 'North Indian', description: 'Authentic North Indian Flavours', cuisinePicture: '/images/cuisine/northindian.jpg', vegFriendly: false },
+  { name: 'Mughlai', description: 'Rich Mughlai and Tandoori Dishes', cuisinePicture: '/images/cuisine/mughlai.jpg', vegFriendly: false },
+  { name: 'Pure Veg', description: 'Healthy Vegetarian Cuisine', cuisinePicture: '/images/cuisine/veg.jpg', vegFriendly: true },
+  { name: 'Chinese', description: 'Authentic Chinese & Pan Asian', cuisinePicture: '/images/cuisine/chinese.jpg', vegFriendly: false },
+  { name: 'Italian', description: 'Classic Italian Pizzas & Pastas', cuisinePicture: '/images/cuisine/italian.jpg', vegFriendly: false },
+  { name: 'Seafood', description: 'Fresh Coastal Seafood Delights', cuisinePicture: '/images/cuisine/seafood.jpg', vegFriendly: false },
+  { name: 'Cafe', description: 'Brewed coffee, snacks and desserts', cuisinePicture: '/images/cuisine/cafe.jpg', vegFriendly: true },
+  { name: 'Biryani & Kebabs', description: 'Aromatic biryani and charcoal kebabs', cuisinePicture: '/images/cuisine/biryani.jpg', vegFriendly: false },
+  { name: 'South Indian', description: 'Authentic dosa, idli and filter coffee', cuisinePicture: '/images/cuisine/southindian.jpg', vegFriendly: true },
+  { name: 'Continental', description: 'Global comfort food and grills', cuisinePicture: '/images/cuisine/continental.jpg', vegFriendly: false }
+]
+
+// City and district metadata drive the location objects for generated restaurants.
+// This keeps the 100 generated records distributed across multiple cities and
+// makes the location filter meaningful in the UI and tests.
+const cityCatalog = [
+  { district: 'Khordha', city: 'Bhubaneswar', pinPrefix: '751', areas: ['Patia', 'Jaydev Vihar', 'Saheed Nagar', 'Nayapalli', 'Khandagiri', 'Old Town'] },
+  { district: 'Cuttack', city: 'Cuttack', pinPrefix: '753', areas: ['Badambadi', 'Buxi Bazaar', 'Mahanadi Vihar', 'CDA Sector 9', 'Dolamundai', 'Tulsipur'] },
+  { district: 'Puri', city: 'Puri', pinPrefix: '752', areas: ['Sea Beach', 'Grand Road', 'Baliapanda', 'Chakratirtha', 'Lighthouse Road', 'Swargadwar'] },
+  { district: 'Sambalpur', city: 'Sambalpur', pinPrefix: '768', areas: ['Ainthapali', 'Budharaja', 'Dhanupali', 'Farm Road', 'Baraipali', 'Sakhipara'] },
+  { district: 'Sundargarh', city: 'Rourkela', pinPrefix: '769', areas: ['Civil Township', 'Panposh', 'Chhend', 'Udit Nagar', 'Basanti Colony', 'Koel Nagar'] },
+  { district: 'Balasore', city: 'Balasore', pinPrefix: '756', areas: ['OT Road', 'Soro', 'Remuna', 'Sahadevkhunta', 'FM Circle', 'Bampada'] },
+  { district: 'Ganjam', city: 'Berhampur', pinPrefix: '760', areas: ['Ankuli', 'Gosaninuagaon', 'Courtpeta', 'Engineering School Rd', 'Aska Road', 'Prem Nagar'] }
+]
+
+// Opening and closing slot pools create realistic schedule variation.
+// We use these arrays to generate combinations that can be tested against
+// the time filter, including early breakfast spots and late-night restaurants.
+const openingSlots = ['06:00 AM', '07:00 AM', '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '01:00 PM']
+const closingSlots = ['09:00 PM', '10:00 PM', '10:30 PM', '11:00 PM', '11:30 PM', '12:00 AM']
+// Table style pools make the detailed pages feel richer and also provide
+// more realistic variation in the restaurant object shape.
+const tableTypePool = ['Booth', 'Standard Table', 'Outdoor Seating', 'Rooftop', 'Private Dining', 'Family Table', 'Bar Counter', 'Window Table']
+const seatPool = [2, 4, 6, 8, 10]
+// Off-day patterns are intentionally varied so date filtering can verify both
+// available and unavailable dates instead of every restaurant behaving the same.
+const offDayPatterns = [[], ['Monday'], ['Tuesday'], ['Wednesday'], ['Thursday'], ['Friday'], ['Sunday'], ['Monday', 'Thursday']]
+// Marketing copy for the generated restaurants. Keeping this as a pool avoids
+// repetitive descriptions and gives the cards and detail screens some personality.
+const messagePool = [
+  'Chef special tasting menu every Friday',
+  'Flat 15% off on advance reservations',
+  'Live acoustic sessions on weekends',
+  'Seasonal menu curated every month',
+  'Family combo offers available',
+  'Complimentary dessert on dinner bookings',
+  'Signature house platter available all day'
+]
+
+// The name pools are used to create restaurant names that look intentional,
+// varied, and easy to scan in the UI.
+const generatedNamePrefixes = [
+  'Spice', 'Urban', 'Royal', 'Coastal', 'Golden', 'Velvet', 'Classic', 'Saffron', 'Emerald', 'Silver',
+  'Pepper', 'Maple', 'Bamboo', 'Cedar', 'Amber', 'Olive', 'Crimson', 'Bluefin', 'Sunset', 'Moonlit'
+]
+
+const generatedNameSuffixes = [
+  'Kitchen', 'Bistro', 'Diner', 'Table', 'Fork', 'Platter', 'Courtyard', 'Haven', 'Terrace', 'Grill',
+  'House', 'Studio', 'Cafe', 'Lounge', 'Point', 'Deck', 'Garden', 'Hub', 'Bay', 'Room'
+]
+
+// Convert a 12-hour formatted time string into minutes so time comparisons
+// are reliable and easy to test. This is used by the meal inference logic.
+const parseTimeToMinutes = (time) => {
+  if (!time) return 0
+  const [clock, period] = time.split(' ')
+  let [hours, minutes] = clock.split(':').map(Number)
+  if (period === 'PM' && hours !== 12) hours += 12
+  if (period === 'AM' && hours === 12) hours = 0
+  return (hours * 60) + minutes
+}
+
+// Infer which meals a restaurant supports from its operating hours.
+// This lets the meal-type filter be meaningful without storing a huge manual
+// mealTypes list for every generated record.
+const inferMealTypes = (openingTime, closingTime) => {
+  const open = parseTimeToMinutes(openingTime)
+  const close = parseTimeToMinutes(closingTime)
+  const normalizedClose = close < open ? close + 1440 : close
+
+  const mealTypes = []
+  if (open <= 8 * 60 && normalizedClose >= 11 * 60) mealTypes.push('breakfast')
+  if (open <= 13 * 60 && normalizedClose >= 15 * 60) mealTypes.push('lunch')
+  if (normalizedClose >= 20 * 60) mealTypes.push('dinner')
+
+  return mealTypes.length > 0 ? mealTypes : ['lunch']
+}
+
+// Local photo assets added under src/Data/Images are loaded with Vite's
+// import.meta.glob so they become proper bundled image URLs at runtime.
+// We sort by numeric filename (1.jpg ... 100.jpg, including decimal names
+// like 18.1.jpg) and then rotate through the full list for restaurant cards.
+const localImageModules = typeof import.meta.glob === 'function'
+  ? import.meta.glob('./Images/*.{jpg,jpeg,png,webp}', {
+      eager: true,
+      import: 'default'
+    })
+  : null
+
+const imageSortKey = (filePath) => {
+  const fileName = filePath.split('/').pop() || ''
+  const baseName = fileName.replace(/\.(jpg|jpeg|png|webp)$/i, '')
+  const numericValue = Number.parseFloat(baseName)
+  return Number.isNaN(numericValue) ? Number.MAX_SAFE_INTEGER : numericValue
+}
+
+const localImagePaths = localImageModules
+  ? Object.entries(localImageModules)
+      .sort((a, b) => imageSortKey(a[0]) - imageSortKey(b[0]))
+      .map(([, imageUrl]) => imageUrl)
+  : Array.from({ length: 100 }, (_, index) => `/src/Data/Images/${index + 1}.jpg`)
+
+// We intentionally cap local images to 100 primary files and then add 10
+// curated fallback restaurant photos. This gives 110 unique first-image slots
+// across 150 restaurants, which means exactly 40 controlled repeats.
+const primaryLocalImagePaths = localImagePaths.slice(0, 100)
+
+const curatedFallbackImagePaths = [
+  'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1424847651672-bf20a4b0982b?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1506089676908-3592f7389d4d?auto=format&fit=crop&w=1200&q=80',
+  'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80'
+]
+
+const imagePoolPaths = primaryLocalImagePaths.length > 0
+  ? [...primaryLocalImagePaths, ...curatedFallbackImagePaths]
+  : curatedFallbackImagePaths
+
+// Build a three-image array per restaurant. Each image is a restaurant-themed
+// photo URL, and the seed ensures the URL set is unique for every restaurant.
+// The first image is used on cards and popups, while the other images are ready
+// for gallery-style views later if needed.
+const createImageSet = (restaurantName, cuisineName, seed) => {
+  if (imagePoolPaths.length === 0) return []
+
+  // Rotate through the 110-image pool (100 local + 10 fallback).
+  // For 150 restaurants this creates controlled reuse instead of complete
+  // uniqueness, matching the requirement that repetition is acceptable.
+  const baseIndex = (seed - 1) % imagePoolPaths.length
+  return [0, 1, 2].map((offset) => {
+    const imageIndex = (baseIndex + offset) % imagePoolPaths.length
+    return imagePoolPaths[imageIndex]
+  })
+}
+
+// Generate a couple of blocked dates per restaurant so the booking and date
+// filter logic can test both available and unavailable cases.
+const createUnavailableDates = (seed) => {
+  const year = 2026
+  const month = ((seed % 12) + 1).toString().padStart(2, '0')
+  const firstDay = ((seed % 18) + 10).toString().padStart(2, '0')
+  const secondDay = (((seed + 6) % 18) + 10).toString().padStart(2, '0')
+  return [`${year}-${month}-${firstDay}`, `${year}-${month}-${secondDay}`]
+}
+
+// Normalize the original 50 seed restaurants so they match the generated ones.
+// This makes the UI and tests work against one consistent schema rather than
+// needing special cases for older records.
+const normalizeRestaurant = (restaurant, index) => {
+  const seed = index + 1
+  const offDays = Array.isArray(restaurant.offDays) ? restaurant.offDays : []
+  const mealTypes = Array.isArray(restaurant.mealTypes) && restaurant.mealTypes.length > 0
+    ? restaurant.mealTypes
+    : inferMealTypes(restaurant.openingTime, restaurant.closingTime)
+
+  return {
+    ...restaurant,
+    images: createImageSet(restaurant.name, restaurant.cuisine.name, seed),
+    mealTypes,
+    serviceDays: dayNames.filter((day) => !offDays.includes(day)),
+    unavailableDates: Array.isArray(restaurant.unavailableDates) ? restaurant.unavailableDates : createUnavailableDates(seed)
+  }
+}
+
+// Generate the additional 100 restaurants. The goal is not only to inflate the
+// dataset size, but to make sure every filter has meaningful combinations to
+// exercise: location, time, rating, AC, vegetarian status, and off-days.
+const buildGeneratedRestaurant = (idNumber) => {
+  const seed = idNumber
+  const cityMeta = cityCatalog[(seed - 1) % cityCatalog.length]
+  const cuisineMeta = cuisineCatalog[(seed - 1) % cuisineCatalog.length]
+  const area = cityMeta.areas[(seed + 2) % cityMeta.areas.length]
+  const openingTime = openingSlots[(seed + 1) % openingSlots.length]
+  const closingTime = closingSlots[(seed + 3) % closingSlots.length]
+  const offDays = offDayPatterns[seed % offDayPatterns.length]
+  const mealTypes = inferMealTypes(openingTime, closingTime)
+  const tableTypes = [
+    tableTypePool[seed % tableTypePool.length],
+    tableTypePool[(seed + 3) % tableTypePool.length],
+    tableTypePool[(seed + 6) % tableTypePool.length]
+  ]
+  const uniqueTableTypes = [...new Set(tableTypes)]
+  const seatsPerTable = [
+    seatPool[seed % seatPool.length],
+    seatPool[(seed + 2) % seatPool.length],
+    seatPool[(seed + 4) % seatPool.length]
+  ]
+
+  const name = `${generatedNamePrefixes[(seed - 1) % generatedNamePrefixes.length]} ${generatedNameSuffixes[(seed + 5) % generatedNameSuffixes.length]}`
+  const pinSuffix = (100 + (seed % 800)).toString().padStart(3, '0')
+  const vegBias = cuisineMeta.vegFriendly ? (seed % 4 !== 0) : (seed % 7 === 0)
+  const hasAC = seed % 5 !== 0
+  const rating = Number((3.8 + ((seed * 17) % 12) / 10).toFixed(1))
+
+  return {
+    id: `R${idNumber}`,
+    name,
+    location: {
+      country: 'India',
+      state: 'Odisha',
+      district: cityMeta.district,
+      city: cityMeta.city,
+      pin: `${cityMeta.pinPrefix}${pinSuffix}`,
+      specialIdentification: `${area} Food District`
+    },
+    cuisine: {
+      name: cuisineMeta.name,
+      description: cuisineMeta.description,
+      cuisinePicture: cuisineMeta.cuisinePicture
+    },
+    isVegOnly: vegBias,
+    hasAC,
+    rating,
+    images: createImageSet(name, cuisineMeta.name, seed),
+    tabledescription: {
+      tableTypesAvailable: uniqueTableTypes,
+      seatsPerTable
+    },
+    menu: [
+      `/images/menu/r${idNumber}-menu1.jpg`,
+      `/images/menu/r${idNumber}-menu2.jpg`
+    ],
+    openingTime,
+    closingTime,
+    offDays,
+    mealTypes,
+    serviceDays: dayNames.filter((day) => !offDays.includes(day)),
+    unavailableDates: createUnavailableDates(seed),
+    specialMessages: messagePool[seed % messagePool.length]
+  }
+}
+
+// Create restaurants R51 through R150 so the app has enough variety to test
+// complex filter combinations and image rendering at scale.
+const generatedRestaurants = Array.from({ length: 100 }, (_, index) => buildGeneratedRestaurant(index + 51))
+
+export const restaurants = [
+  ...seedRestaurants.map(normalizeRestaurant),
+  ...generatedRestaurants
+]

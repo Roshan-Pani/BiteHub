@@ -1,9 +1,21 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useReservationData } from '../context/ReservationDataContext'
 
 function ProfileButton() {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const { resetContext } = useReservationData()
   const [showMenu, setShowMenu] = useState(false)
+
+  const handleResetContext = () => {
+    if (window.confirm('This will clear all bookings, feedback, and payment data. Are you sure?')) {
+      resetContext()
+      setShowMenu(false)
+      alert('Context has been reset successfully!')
+    }
+  }
 
   return (
     <div className="relative">
@@ -24,11 +36,24 @@ function ProfileButton() {
               <p className="text-sm font-semibold text-brand-900">{user?.name || 'Guest User'}</p>
               <p className="text-xs text-brand-600 mt-0.5">{user?.email || 'guest@bitehub.com'}</p>
             </div>
-            <button className="profile-menu__item">
+            <button
+              className="profile-menu__item"
+              onClick={() => {
+                navigate('/my-bookings')
+                setShowMenu(false)
+              }}
+            >
               My Bookings
             </button>
             <button className="profile-menu__item">
               Settings
+            </button>
+            <button 
+              onClick={handleResetContext}
+              className="profile-menu__item"
+              title="Clear all bookings and feedback data"
+            >
+              Reset Context
             </button>
             <button 
               onClick={() => {

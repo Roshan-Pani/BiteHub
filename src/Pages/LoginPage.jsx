@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useReservationData } from '../context/ReservationDataContext'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 function LoginPage() {
@@ -11,6 +12,7 @@ function LoginPage() {
     password: ''
   })
   const { login, isAuthenticated } = useAuth()
+  const { resolveUserIdentity } = useReservationData()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -31,12 +33,19 @@ function LoginPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    
-    // Mock authentication
-    const userData = {
-      name: formData.name || 'Guest User',
+
+    const identity = resolveUserIdentity({
       email: formData.email,
+      name: formData.name,
       phone: formData.phone
+    })
+
+    const userData = {
+      id: identity.id,
+      isSeedUser: identity.isSeedUser,
+      name: identity.name,
+      email: identity.email,
+      phone: identity.phone
     }
     
     login(userData)

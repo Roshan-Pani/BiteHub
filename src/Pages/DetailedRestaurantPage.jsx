@@ -1,22 +1,119 @@
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useReservationData } from '../context/ReservationDataContext'
 import Header from '../Components/Header'
 import { restaurants } from '../Data/restaurants'
+import { getDetailedMenuForRestaurant, getMenuStats } from '../Data/restaurantMenuCatalog'
+
+const panelCards = [
+  { key: 'photos', title: 'Photos' },
+  { key: 'menu', title: 'Menu' },
+  { key: 'reviews', title: 'Reviews' }
+]
+
+const parseMeridianTime = (value) => {
+  if (!value || typeof value !== 'string') return null
+  const [clock, period] = value.trim().split(' ')
+  if (!clock || !period) return null
+
+  const [hoursRaw, minutesRaw] = clock.split(':').map(Number)
+  if (Number.isNaN(hoursRaw) || Number.isNaN(minutesRaw)) return null
+
+  let hours = hoursRaw
+  if (period === 'PM' && hours !== 12) hours += 12
+  if (period === 'AM' && hours === 12) hours = 0
+  return { hours, minutes: minutesRaw }
+}
+
+const isRestaurantOpenNow = (openingTime, closingTime) => {
+  const open = parseMeridianTime(openingTime)
+  const close = parseMeridianTime(closingTime)
+  if (!open || !close) return true
+
+  const now = new Date()
+  const minutesNow = now.getHours() * 60 + now.getMinutes()
+  const openMinutes = open.hours * 60 + open.minutes
+  const closeMinutes = close.hours * 60 + close.minutes
+
+  if (closeMinutes < openMinutes) {
+    return minutesNow >= openMinutes || minutesNow <= closeMinutes
+  }
+  return minutesNow >= openMinutes && minutesNow <= closeMinutes
+}
+
+function DetailPanelModal({ isOpen, onClose, title, children }) {
+  useEffect(() => {
+    if (!isOpen) return undefined
+    document.body.style.overflow = 'hidden'
+    const handleEsc = (event) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleEsc)
+
+    return () => {
+      document.body.style.overflow = 'unset'
+      window.removeEventListener('keydown', handleEsc)
+    }
+  }, [isOpen, onClose])
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-[230] bg-slate-950/55 backdrop-blur-sm p-4 flex items-center justify-center" onClick={onClose}>
+      <div className="w-full max-w-6xl max-h-[90vh] bg-white rounded-3xl shadow-[0_24px_64px_rgba(15,23,42,0.32)] overflow-hidden border border-slate-200" onClick={(event) => event.stopPropagation()}>
+        <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+          <h3 className="text-xl font-bold text-slate-900">{title}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-9 w-9 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-200 transition-colors"
+          >
+            x
+          </button>
+        </div>
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-72px)]">
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function DetailedRestaurantPage() {
+  const REVIEWS_BATCH_SIZE = 12
   const { id } = useParams()
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
-  
-  // Find restaurant by ID
-  const restaurant = restaurants.find(r => r.id === id)
-  
-  // Redirect if restaurant not found
-  if (!restaurant) {
-    navigate('/')
-    return null
-  }
+  const { getRestaurantFeedbackStats } = useReservationData()
+
+  const [activePanel, setActivePanel] = useState(null)
+  const [visibleReviewCount, setVisibleReviewCount] = useState(REVIEWS_BATCH_SIZE)
+
+  const restaurant = useMemo(() => restaurants.find((entry) => entry.id === id) || null, [id])
+
+  useEffect(() => {
+    if (!restaurant) {
+      navigate('/')
+    }
+  }, [restaurant, navigate])
+
+  if (!restaurant) return null
+
+  const feedbackStats = getRestaurantFeedbackStats(restaurant.id)
+  const displayRating = feedbackStats.reviewCount > 0 ? feedbackStats.averageRating : restaurant.rating
+  const detailedMenu = useMemo(() => getDetailedMenuForRestaurant(restaurant), [restaurant])
+  const menuStats = useMemo(() => getMenuStats(detailedMenu), [detailedMenu])
+  const allReviews = feedbackStats.allReviews || feedbackStats.recentReviews || []
+  const visibleReviews = allReviews.slice(0, visibleReviewCount)
+  const hasMoreReviews = visibleReviewCount < allReviews.length
+  const openNow = isRestaurantOpenNow(restaurant.openingTime, restaurant.closingTime)
+
+  useEffect(() => {
+    if (activePanel === 'reviews') {
+      setVisibleReviewCount(REVIEWS_BATCH_SIZE)
+    }
+  }, [activePanel])
 
   const getFallbackImage = (cuisineName) => {
     const cuisineImages = {
@@ -31,24 +128,37 @@ function DetailedRestaurantPage() {
     return cuisineImages[cuisineName] || cuisineImages.default
   }
 
+  const handleImageError = (event, cuisineName) => {
+    event.currentTarget.onerror = null
+    event.currentTarget.src = getFallbackImage(cuisineName)
+  }
+
+  const handleBookTable = () => {
+    if (isAuthenticated) {
+      navigate(`/booking/${restaurant.id}`)
+      return
+    }
+    navigate('/login', { state: { from: `/booking/${restaurant.id}` } })
+  }
+
+  const reviewPreview = feedbackStats.recentReviews.slice(0, 2)
+
   return (
     <div className="min-h-screen bg-[#F2F2F0]">
       <Header />
-      
-      {/* Hero Section with Image Banner */}
+
       <section className="relative w-full h-96 bg-brand-900">
-        {/* Background Image */}
         <div className="absolute inset-0">
           <img
-            src={getFallbackImage(restaurant.cuisine.name)}
+            src={restaurant.images?.[0] || getFallbackImage(restaurant.cuisine.name)}
             alt={restaurant.name}
             className="w-full h-full object-cover"
+            onError={(event) => handleImageError(event, restaurant.cuisine.name)}
           />
         </div>
-        
-        {/* Floating Info Card */}
+
         <div className="relative max-w-[1280px] mx-auto px-6 h-full flex items-end pb-8">
-          <div className="bg-white  rounded-3xl shadow-md p-8 max-w-2xl w-full transform translate-y-12">
+          <div className="bg-white rounded-3xl shadow-md p-8 max-w-2xl w-full transform translate-y-12">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h1 className="text-4xl font-bold text-black mb-2">{restaurant.name}</h1>
@@ -60,14 +170,12 @@ function DetailedRestaurantPage() {
                   <span className="text-sm">{restaurant.location.specialIdentification}, {restaurant.location.city}</span>
                 </div>
               </div>
-              
-              {/* Rating */}
+
               <div className="px-5 py-3 bg-accent-600 text-white text-xl font-bold rounded-2xl flex items-center gap-2 shadow-md">
-                <span>{restaurant.rating.toFixed(1)}</span>
+                <span>{displayRating.toFixed(1)}</span>
               </div>
             </div>
-            
-            {/* Quick Stats */}
+
             <div className="flex gap-6 pt-4 border-t border-black">
               <div>
                 <p className="text-xs font-bold text-black uppercase tracking-wide mb-1">Type</p>
@@ -75,7 +183,7 @@ function DetailedRestaurantPage() {
               </div>
               <div className="border-l border-black pl-6">
                 <p className="text-xs font-bold text-black uppercase tracking-wide mb-1">Status</p>
-                <p className="font-bold text-black">Open Now</p>
+                <p className="font-bold text-black">{openNow ? 'Open Now' : 'Closed'}</p>
               </div>
               <div className="border-l border-black pl-6">
                 <p className="text-xs font-bold text-black uppercase tracking-wide mb-1">Timings</p>
@@ -85,129 +193,146 @@ function DetailedRestaurantPage() {
           </div>
         </div>
       </section>
-      
-      {/* Main Content */}
+
       <main className="max-w-[1280px] mx-auto px-6 mt-20">
-        
-        {/* Tab Navigation */}
-        <div className="mb-8 border-b border-brand-200">
-          <div className="flex gap-8">
-            <button className="pb-4 text-brand-900 font-semibold border-b-2 border-brand-600">
-              Dine Out
-            </button>
-            <button className="pb-4 text-brand-600 font-medium hover:text-brand-900">
-              Photos ({restaurant.images.length})
-            </button>
-            <button className="pb-4 text-brand-600 font-medium hover:text-brand-900">
-              Menu
-            </button>
-            <button className="pb-4 text-brand-600 font-medium hover:text-brand-900">
-              Reviews
-            </button>
-          </div>
+
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <article className="bg-white rounded-2xl border border-brand-200 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-black/60">Cuisine</p>
+            <p className="text-lg font-bold text-black mt-1">{restaurant.cuisine.name}</p>
+            <p className="text-sm text-black/70 mt-2">{restaurant.cuisine.description}</p>
+          </article>
+          <article className="bg-white rounded-2xl border border-brand-200 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-black/60">Menu Depth</p>
+            <p className="text-lg font-bold text-black mt-1">{menuStats.totalItems} items</p>
+            <p className="text-sm text-black/70 mt-2">{menuStats.totalCategories} categories, avg Rs {menuStats.avgPrice}</p>
+          </article>
+          <article className="bg-white rounded-2xl border border-brand-200 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-black/60">Tables</p>
+            <p className="text-lg font-bold text-black mt-1">{restaurant.tabledescription.tableTypesAvailable.length} types</p>
+            <p className="text-sm text-black/70 mt-2">{restaurant.tabledescription.tableTypesAvailable.slice(0, 2).join(', ')}</p>
+          </article>
+          <article className="bg-white rounded-2xl border border-brand-200 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-black/60">Reviews</p>
+            <p className="text-lg font-bold text-black mt-1">{displayRating.toFixed(1)} rating</p>
+            <p className="text-sm text-black/70 mt-2">{feedbackStats.reviewCount} verified reviews</p>
+          </article>
         </div>
-        
+
+        <div className="mb-8 grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {panelCards.map((panel) => (
+            <article key={panel.key} className="bg-white rounded-2xl border border-brand-200 p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-lg font-bold text-black">{panel.title}</h2>
+                <button
+                  type="button"
+                  onClick={() => setActivePanel(panel.key)}
+                  className="text-sm px-3 py-1.5 rounded-lg border border-brand-300 hover:bg-brand-50 font-semibold text-brand-700"
+                >
+                  Open
+                </button>
+              </div>
+
+              {panel.key === 'photos' && (
+                <div className="grid grid-cols-3 gap-2 mt-3">
+                  {(restaurant.images || []).slice(0, 3).map((image) => (
+                    <img
+                      key={image}
+                      src={image}
+                      alt={`${restaurant.name} preview`}
+                      className="h-20 w-full object-cover rounded-lg border border-brand-100"
+                      onError={(event) => handleImageError(event, restaurant.cuisine.name)}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {panel.key === 'menu' && (
+                <div className="mt-3 space-y-2">
+                  {detailedMenu.slice(0, 3).map((category) => (
+                    <p key={category.title} className="text-sm text-black/70">
+                      {category.title}: <span className="font-semibold text-black">{category.items.length} items</span>
+                    </p>
+                  ))}
+                </div>
+              )}
+
+              {panel.key === 'reviews' && (
+                <div className="mt-3 space-y-2">
+                  {reviewPreview.length === 0 && <p className="text-sm text-black/60">No reviews yet.</p>}
+                  {reviewPreview.map((review) => (
+                    <p key={review.id} className="text-sm text-black/70 line-clamp-2">
+                      <span className="font-semibold text-black">{review.reviewerName}:</span> {review.review}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
-          
-          {/* Left Column: Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            
-            {/* Offers Section */}
             {restaurant.specialMessages && (
-              <section className="bg-white  rounded-2xl p-6 shadow-md">
-                <h2 className="text-xl font-bold text-black mb-4 flex items-center gap-2">
-                  Special Info
-                </h2>
+              <section className="bg-white rounded-2xl p-6 shadow-sm border border-brand-200">
+                <h2 className="text-xl font-bold text-black mb-4">Special Info</h2>
                 <div className="p-4 bg-brand-50 rounded-xl border border-brand-200">
-                  <p className="font-bold text-black mb-1">{restaurant.specialMessages}</p>
+                  <p className="font-semibold text-black">{restaurant.specialMessages}</p>
                 </div>
               </section>
             )}
-            
-            {/* Cuisine & Features */}
-            <section className="bg-white  rounded-2xl p-6 shadow-md">
-              <h2 className="text-xl font-bold text-black mb-4">Cuisine & Features</h2>
-              <div className="space-y-4">
+
+            <section className="bg-white rounded-2xl p-6 shadow-sm border border-brand-200">
+              <h2 className="text-xl font-bold text-black mb-4">Cuisine and Features</h2>
+              <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-black font-bold uppercase tracking-wide mb-2">Specialties</p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-4 py-2 bg-brand-50 text-black rounded-full text-sm font-bold">{restaurant.cuisine.name}</span>
-                  </div>
+                  <p className="text-sm font-semibold text-black/70 uppercase tracking-wide mb-2">Service Days</p>
+                  <p className="text-black font-semibold">{(restaurant.serviceDays || []).join(', ') || 'All days open'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-black font-bold uppercase tracking-wide mb-2">Facilities</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {restaurant.hasAC && (
-                      <div className="flex items-center gap-2 text-black font-semibold">
-                        <span className="text-sm">AC Available</span>
-                      </div>
-                    )}
-                    {restaurant.tabledescription.tableTypesAvailable.map((type, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-black font-semibold">
-                        <span className="text-sm">{type}</span>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-sm font-semibold text-black/70 uppercase tracking-wide mb-2">Facilities</p>
+                  <p className="text-black font-semibold">
+                    {restaurant.hasAC ? 'AC Available' : 'Non-AC'} · {restaurant.tabledescription.tableTypesAvailable.join(', ')}
+                  </p>
                 </div>
               </div>
             </section>
-            
-            {/* Location Section */}
-            <section className="bg-white  rounded-2xl p-6 shadow-md">
-              <h2 className="text-xl font-bold text-black mb-4">Location & Contact</h2>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <svg className="w-5 h-5 text-brand-200 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  </svg>
-                  <div>
-                    <p className="text-black font-bold">{restaurant.location.specialIdentification}</p>
-                    <p className="text-sm text-black font-medium">{restaurant.location.city}, {restaurant.location.state} - {restaurant.location.pin}</p>
-                  </div>
-                </div>
-                
-                {/* Map Placeholder */}
-                <div className="w-full h-48 bg-brand-100 rounded-xl flex items-center justify-center">
-                  <div className="text-center text-brand-200">
-                    <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                    </svg>
-                    <p className="text-sm">Map View</p>
-                  </div>
-                </div>
-              </div>
+
+            <section className="bg-white rounded-2xl p-6 shadow-sm border border-brand-200">
+              <h2 className="text-xl font-bold text-black mb-4">Location and Contact</h2>
+              <p className="font-semibold text-black">{restaurant.location.specialIdentification}</p>
+              <p className="text-sm text-black/70 mt-1">
+                {restaurant.location.city}, {restaurant.location.state} - {restaurant.location.pin}
+              </p>
             </section>
-            
           </div>
-          
-          {/* Right Column: Booking Card */}
+
           <div className="lg:col-span-1">
-            <div className="sticky top-24 bg-white  rounded-2xl p-6 shadow-md">
-              <h3 className="text-lg font-bold text-black mb-6">🍽️ Reserve Your Table</h3>
-              
-              {/* Booking Form UI */}
+            <div className="sticky top-24 bg-white rounded-2xl p-6 shadow-sm border border-brand-200">
+              <h3 className="text-lg font-bold text-black mb-6">Reserve Your Table</h3>
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-bold text-black mb-2">Select Date</label>
                   <div className="p-3 border border-black rounded-xl hover:border-black transition-colors cursor-pointer">
-                    <span className="text-black font-semibold">📅 Feb 20, 2026</span>
+                    <span className="text-black font-semibold">Any upcoming service day</span>
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-bold text-black mb-2">Select Time</label>
                   <div className="p-3 border border-black rounded-xl hover:border-black transition-colors cursor-pointer">
-                    <span className="text-black font-semibold">🕐 7:30 PM</span>
+                    <span className="text-black font-semibold">{restaurant.openingTime} to {restaurant.closingTime}</span>
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-bold text-black mb-2">Guests</label>
                   <div className="p-3 border border-brand-200 rounded-xl hover:border-brand-200 transition-colors cursor-pointer">
-                    <span className="text-brand-600">👥 2 People</span>
+                    <span className="text-brand-600">Choose while booking</span>
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-brand-900 mb-2">Table Type</label>
                   <div className="grid grid-cols-2 gap-2">
@@ -227,42 +352,131 @@ function DetailedRestaurantPage() {
                     ))}
                   </div>
                 </div>
-                
-                {/* Price Summary */}
+
                 <div className="pt-4 border-t border-brand-100">
                   <div className="flex justify-between mb-2">
-                    <span className="text-brand-600">Base Price</span>
-                    <span className="font-semibold">₹800</span>
+                    <span className="text-brand-600">Avg Menu Price</span>
+                    <span className="font-semibold">Rs {menuStats.avgPrice}</span>
                   </div>
                   <div className="flex justify-between text-brand-600 mb-2">
-                    <span>Discount (10%)</span>
-                    <span className="font-semibold">-₹80</span>
+                    <span>Available Items</span>
+                    <span className="font-semibold">{menuStats.availableItems}</span>
                   </div>
                   <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                    <span>Total</span>
-                    <span className="text-brand-900">₹720</span>
+                    <span>Total Menu Items</span>
+                    <span className="text-brand-900">{menuStats.totalItems}</span>
                   </div>
                 </div>
-                
-                {/* Book Button */}
-                <button 
-                  onClick={() => {
-                    if (isAuthenticated) {
-                      navigate(`/booking/${restaurant.id}`)
-                    } else {
-                      navigate('/login', { state: { from: `/booking/${restaurant.id}` } })
-                    }
-                  }}
+
+                <button
+                  onClick={handleBookTable}
                   className="w-full py-4 bg-brand-200 text-brand-900 font-bold rounded-2xl hover:bg-brand-600 hover:text-white hover:shadow-lg transition-all"
                 >
-                  {isAuthenticated ? 'Confirm Booking' : 'Sign In to Book'}
+                  {isAuthenticated ? 'Book Table' : 'Sign In to Book'}
                 </button>
               </div>
             </div>
           </div>
-          
+
         </div>
       </main>
+
+      <DetailPanelModal isOpen={activePanel === 'photos'} onClose={() => setActivePanel(null)} title={`${restaurant.name} · Photos`}>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {(restaurant.images || []).map((image, index) => (
+            <figure key={`${image}-${index}`} className="rounded-2xl overflow-hidden border border-brand-200 bg-white">
+              <img
+                src={image}
+                alt={`${restaurant.name} photo ${index + 1}`}
+                className="w-full h-56 object-cover"
+                onError={(event) => handleImageError(event, restaurant.cuisine.name)}
+              />
+              <figcaption className="px-3 py-2 text-sm text-black/70">Photo {index + 1}</figcaption>
+            </figure>
+          ))}
+        </div>
+      </DetailPanelModal>
+
+      <DetailPanelModal isOpen={activePanel === 'menu'} onClose={() => setActivePanel(null)} title={`${restaurant.name} · Detailed Menu`}>
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          {detailedMenu.map((category) => (
+            <section key={category.title} className="border border-brand-200 rounded-2xl p-4 bg-brand-50/20">
+              <h4 className="text-lg font-bold text-black">{category.title}</h4>
+              <p className="text-sm text-black/70 mt-1 mb-4">{category.description}</p>
+              <div className="space-y-3">
+                {category.items.map((item) => (
+                  <article key={item.name} className="bg-white border border-brand-100 rounded-xl p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-black">{item.name}</p>
+                        <p className="text-sm text-black/70 mt-1">{item.description}</p>
+                      </div>
+                      <p className="font-bold text-brand-900 whitespace-nowrap">Rs {item.price}</p>
+                    </div>
+                    <div className="mt-2 flex gap-2 flex-wrap">
+                      {item.tags.map((tag) => (
+                        <span key={`${item.name}-${tag}`} className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                          {tag}
+                        </span>
+                      ))}
+                      {!item.available && (
+                        <span className="text-xs px-2 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                          Currently unavailable
+                        </span>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      </DetailPanelModal>
+
+      <DetailPanelModal isOpen={activePanel === 'reviews'} onClose={() => setActivePanel(null)} title={`${restaurant.name} · Guest Reviews`}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          <article className="bg-brand-50 border border-brand-200 rounded-xl p-4">
+            <p className="text-sm text-black/60">Average Rating</p>
+            <p className="text-3xl font-bold text-black mt-1">{displayRating.toFixed(1)}</p>
+          </article>
+          <article className="bg-brand-50 border border-brand-200 rounded-xl p-4">
+            <p className="text-sm text-black/60">Total Reviews</p>
+            <p className="text-3xl font-bold text-black mt-1">{feedbackStats.reviewCount}</p>
+          </article>
+          <article className="bg-brand-50 border border-brand-200 rounded-xl p-4">
+            <p className="text-sm text-black/60">Recent Feedback</p>
+            <p className="text-lg font-bold text-black mt-1">Live from diners</p>
+          </article>
+        </div>
+
+        {allReviews.length === 0 ? (
+          <p className="text-sm text-black/70">No reviews yet for this restaurant.</p>
+        ) : (
+          <div className="space-y-4">
+            {visibleReviews.map((review) => (
+              <article key={review.id} className="border border-brand-200 rounded-xl p-4 bg-white">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold text-black">{review.reviewerName}</p>
+                  <p className="text-sm font-bold text-black">{review.rating.toFixed(1)} / 5</p>
+                </div>
+                <p className="text-sm text-black/80 mt-2">{review.review}</p>
+              </article>
+            ))}
+
+            {hasMoreReviews && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setVisibleReviewCount((prev) => prev + REVIEWS_BATCH_SIZE)}
+                  className="px-4 py-2 rounded-lg border border-brand-300 hover:bg-brand-50 font-semibold text-brand-700"
+                >
+                  Load More Reviews
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </DetailPanelModal>
     </div>
   )
 }

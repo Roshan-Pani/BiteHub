@@ -1,403 +1,799 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
 import Header from '../Components/Header'
+import Tablechat from '../Components/Tablechat'
 import { restaurants } from '../Data/restaurants'
+import { getSeatsForSlot } from '../Data/tableunits'
+import { useAuth } from '../context/AuthContext'
+import { useReservationData } from '../context/ReservationDataContext'
+
+const getDraftStorageKey = (restaurantId) => `booking-draft-${restaurantId}`
+
+const getDefaultBookingDetails = () => ({
+  date: '',
+  time: '',
+  guests: [],
+  selectedTableIds: [],
+  paymentMethod: 'card'
+})
+
+const readBookingDraft = (restaurantId) => {
+  const fallback = getDefaultBookingDetails()
+
+  try {
+    const raw = sessionStorage.getItem(getDraftStorageKey(restaurantId))
+    if (!raw) return fallback
+
+    const parsed = JSON.parse(raw)
+    return {
+      ...fallback,
+      ...parsed,
+      guests: Array.isArray(parsed?.guests) ? parsed.guests : fallback.guests,
+      selectedTableIds: Array.isArray(parsed?.selectedTableIds) ? parsed.selectedTableIds : fallback.selectedTableIds
+    }
+  } catch {
+    return fallback
+  }
+}
+
+const parseMeridianTime = (timeValue) => {
+  if (!timeValue || typeof timeValue !== 'string') return 0
+  const [clock, period] = timeValue.trim().split(' ')
+  let [hours, minutes] = clock.split(':').map(Number)
+
+  if (period === 'PM' && hours !== 12) hours += 12
+  if (period === 'AM' && hours === 12) hours = 0
+
+  return (hours * 60) + minutes
+}
+
+const parseInputTime = (timeValue) => {
+  if (!timeValue || !timeValue.includes(':')) return 0
+  const [hours, minutes] = timeValue.split(':').map(Number)
+  return (hours * 60) + minutes
+}
+
+const formatInputTime = (timeValue) => {
+  if (!timeValue || !timeValue.includes(':')) return 'Not selected'
+  const [hourRaw, minuteRaw] = timeValue.split(':').map(Number)
+  const period = hourRaw >= 12 ? 'PM' : 'AM'
+  const hour = hourRaw % 12 === 0 ? 12 : hourRaw % 12
+  return `${hour}:${String(minuteRaw).padStart(2, '0')} ${period}`
+}
+
+const parseTimeParts = (timeValue) => {
+  if (!timeValue || !timeValue.includes(':')) {
+    return { hour12: '', minute: '', period: 'PM' }
+  }
+
+  const [hourRaw, minuteRaw] = timeValue.split(':').map(Number)
+  if (Number.isNaN(hourRaw) || Number.isNaN(minuteRaw)) {
+    return { hour12: '', minute: '', period: 'PM' }
+  }
+
+  const period = hourRaw >= 12 ? 'PM' : 'AM'
+  const hour12 = hourRaw % 12 === 0 ? 12 : hourRaw % 12
+  return {
+    hour12: String(hour12).padStart(2, '0'),
+    minute: String(minuteRaw).padStart(2, '0'),
+    period
+  }
+}
+
+const buildTimeFromParts = ({ hour12, minute, period }) => {
+  if (!hour12 || !minute || !period) return ''
+
+  let hours = Number(hour12)
+  if (Number.isNaN(hours) || hours < 1 || hours > 12) return ''
+
+  if (period === 'PM' && hours !== 12) hours += 12
+  if (period === 'AM' && hours === 12) hours = 0
+
+  return `${String(hours).padStart(2, '0')}:${String(Number(minute)).padStart(2, '0')}`
+}
 
 function BookingPage() {
   const { restaurantId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { createRuntimeBooking, upsertPaymentForBooking } = useReservationData()
 
-  // Find the restaurant
-  const restaurant = restaurants.find(r => r.id === restaurantId)
+  const restaurant = restaurants.find((record) => record.id === restaurantId)
 
-  const [bookingDetails, setBookingDetails] = useState({
-    date: '',
-    time: '',
-    guests: [{
-      id: 1,
-      name: user?.name || '',
-      age: '',
-      sex: '',
-      foodPreference: ''
-    }],
-    selectedSeats: [],
-    paymentMethod: 'card'
-  })
+  const [bookingDetails, setBookingDetails] = useState(() => readBookingDraft(restaurantId))
 
+  const availableTableUnits = useMemo(() => {
+    return getSeatsForSlot({
+      restaurantId,
+      date: bookingDetails.date,
+      time: bookingDetails.time
+    })
+  }, [restaurantId, bookingDetails.date, bookingDetails.time])
+
+  const [showGuestModal, setShowGuestModal] = useState(false)
+  const [guestForm, setGuestForm] = useState({ name: '', age: '', foodPreference: '', sex: '' })
+  const [guestFormError, setGuestFormError] = useState('')
+  const [showProcessingModal, setShowProcessingModal] = useState(false)
+  const [processingStep, setProcessingStep] = useState(0)
   const [errors, setErrors] = useState({})
+  const preserveDraftOnUnmountRef = useRef(false)
+
+  const processingSteps = useMemo(() => {
+    if (bookingDetails.paymentMethod === 'restaurant') {
+      return [
+        'Validating booking details...',
+        'Checking seat availability...',
+        'Locking reservation inventory...',
+        'Booking confirmed for pay-at-restaurant...',
+        'Redirecting to your dashboard...'
+      ]
+    }
+
+    return [
+      'Validating booking details...',
+      'Checking seat availability...',
+      'Connecting to demo payment gateway...',
+      'Generating reservation token...',
+      'Redirecting to your dashboard...'
+    ]
+  }, [bookingDetails.paymentMethod])
+
+  useEffect(() => {
+    if (!showProcessingModal) return
+
+    if (processingStep >= processingSteps.length) {
+      const timer = setTimeout(() => {
+        sessionStorage.removeItem(getDraftStorageKey(restaurantId))
+        navigate('/')
+      }, 1200)
+      return () => clearTimeout(timer)
+    }
+
+    const timer = setTimeout(() => {
+      setProcessingStep((step) => step + 1)
+    }, 900)
+
+    return () => clearTimeout(timer)
+  }, [showProcessingModal, processingStep, processingSteps.length, navigate])
+
+  useEffect(() => {
+    const availableIds = new Set(
+      availableTableUnits
+        .filter((table) => table.status === 'Available')
+        .map((table) => table.id)
+    )
+
+    setBookingDetails((prev) => {
+      const filteredTableIds = prev.selectedTableIds.filter((id) => availableIds.has(id))
+      if (filteredTableIds.length === prev.selectedTableIds.length) return prev
+      return {
+        ...prev,
+        selectedTableIds: filteredTableIds
+      }
+    })
+  }, [availableTableUnits])
+
+  useEffect(() => {
+    sessionStorage.setItem(getDraftStorageKey(restaurantId), JSON.stringify(bookingDetails))
+  }, [restaurantId, bookingDetails])
+
+  useEffect(() => {
+    return () => {
+      if (!preserveDraftOnUnmountRef.current) {
+        sessionStorage.removeItem(getDraftStorageKey(restaurantId))
+      }
+      preserveDraftOnUnmountRef.current = false
+    }
+  }, [restaurantId])
 
   if (!restaurant) {
     navigate('/')
     return null
   }
 
-  const addGuest = () => {
-    setBookingDetails(prev => ({
-      ...prev,
-      guests: [...prev.guests, {
-        id: prev.guests.length + 1,
-        name: '',
-        age: '',
-        sex: '',
-        foodPreference: ''
-      }]
-    }))
+  const openTimeMinutes = parseMeridianTime(restaurant.openingTime)
+  const closeTimeMinutes = parseMeridianTime(restaurant.closingTime)
+
+  const selectedSeats = availableTableUnits.filter((seat) => bookingDetails.selectedTableIds.includes(seat.id))
+  const selectedSeatCount = bookingDetails.selectedTableIds.length
+
+  const totalGuests = bookingDetails.guests.length
+  const infantCount = bookingDetails.guests.filter((guest) => Number(guest.age) < 2).length
+  const adultCount = bookingDetails.guests.filter((guest) => Number(guest.age) >= 18).length
+  const seatRequiredGuests = bookingDetails.guests.filter((guest) => Number(guest.age) >= 2).length
+  const childCount = bookingDetails.guests.filter((guest) => {
+    const age = Number(guest.age)
+    return age >= 2 && age < 18
+  }).length
+
+  const bookingBase = Math.ceil(300 * 0.6)
+  const costPerSeat = Math.ceil(150 * 0.6)
+  const subtotal = bookingBase + (selectedSeatCount * costPerSeat)
+  const discount = Math.ceil(subtotal * 0.1)
+  const total = Math.max(0, subtotal - discount)
+
+  const isDateBookable = (dateValue) => {
+    if (!dateValue) return true
+    const selectedDate = new Date(dateValue)
+    if (Number.isNaN(selectedDate.getTime())) return false
+
+    const dayName = selectedDate.toLocaleDateString('en-US', { weekday: 'long' })
+    if ((restaurant.offDays || []).includes(dayName)) return false
+    if ((restaurant.unavailableDates || []).includes(dateValue)) return false
+
+    return true
   }
 
-  const removeGuest = (guestId) => {
-    if (bookingDetails.guests.length === 1) return
-    setBookingDetails(prev => ({
-      ...prev,
-      guests: prev.guests.filter(g => g.id !== guestId)
-    }))
+  const isTimeBookable = (timeValue) => {
+    if (!timeValue) return false
+
+    const selectedTime = parseInputTime(timeValue)
+    if (closeTimeMinutes >= openTimeMinutes) {
+      return selectedTime >= openTimeMinutes && selectedTime <= closeTimeMinutes
+    }
+
+    return selectedTime >= openTimeMinutes || selectedTime <= closeTimeMinutes
   }
 
-  const updateGuest = (guestId, field, value) => {
-    setBookingDetails(prev => ({
-      ...prev,
-      guests: prev.guests.map(g => 
-        g.id === guestId ? { ...g, [field]: value } : g
-      )
-    }))
-  }
+  const toggleTableSelection = (tableId) => {
+    setBookingDetails((prev) => {
+      // Reset all selections if tableId is null
+      if (tableId === null) {
+        return {
+          ...prev,
+          selectedTableIds: []
+        }
+      }
 
-  const handleSeatToggle = (seatId) => {
-    setBookingDetails(prev => {
-      const isSelected = prev.selectedSeats.includes(seatId)
+      const exists = prev.selectedTableIds.includes(tableId)
       return {
         ...prev,
-        selectedSeats: isSelected 
-          ? prev.selectedSeats.filter(id => id !== seatId)
-          : [...prev.selectedSeats, seatId]
+        selectedTableIds: exists
+          ? prev.selectedTableIds.filter((id) => id !== tableId)
+          : [...prev.selectedTableIds, tableId]
       }
     })
   }
 
+  const timeParts = parseTimeParts(bookingDetails.time)
+
+  const handleTimePartChange = (field, value) => {
+    const nextParts = {
+      ...timeParts,
+      [field]: value
+    }
+
+    setBookingDetails((prev) => ({
+      ...prev,
+      time: buildTimeFromParts(nextParts)
+    }))
+  }
+
+  const removeGuest = (guestId) => {
+    setBookingDetails((prev) => ({
+      ...prev,
+      guests: prev.guests.filter((guest) => guest.id !== guestId)
+    }))
+  }
+
+  const openGuestModal = () => {
+    setGuestForm({ name: '', age: '', foodPreference: '', sex: '' })
+    setGuestFormError('')
+    setShowGuestModal(true)
+  }
+
+  const addGuestFromModal = () => {
+    const trimmedName = guestForm.name.trim()
+    const age = Number(guestForm.age)
+
+    if (!trimmedName) {
+      setGuestFormError('Guest name is required.')
+      return
+    }
+
+    if (Number.isNaN(age) || age < 0 || age > 120) {
+      setGuestFormError('Enter a valid age between 0 and 120.')
+      return
+    }
+
+    if (age >= 2 && !guestForm.foodPreference) {
+      setGuestFormError('Food preference is required for guests aged 2+ years.')
+      return
+    }
+
+    if (age >= 13 && !guestForm.sex) {
+      setGuestFormError('Sex selection is required for guests aged 13+ years.')
+      return
+    }
+
+    setBookingDetails((prev) => ({
+      ...prev,
+      guests: [
+        ...prev.guests,
+        {
+          id: Date.now(),
+          name: trimmedName,
+          age: String(age),
+          foodPreference: age < 2 ? 'Infant' : guestForm.foodPreference,
+          sex: guestForm.sex
+        }
+      ]
+    }))
+
+    setGuestFormError('')
+    setShowGuestModal(false)
+  }
+
   const validateBooking = () => {
-    const newErrors = {}
+    const validationErrors = {}
 
-    if (!bookingDetails.date) newErrors.date = 'Please select a date'
-    if (!bookingDetails.time) newErrors.time = 'Please select a time'
-    if (bookingDetails.selectedSeats.length === 0) newErrors.seats = 'Please select at least one table'
+    if (!bookingDetails.date) validationErrors.date = 'Please select a booking date.'
+    if (!isDateBookable(bookingDetails.date)) validationErrors.date = 'Restaurant is not serving on this date.'
 
-    bookingDetails.guests.forEach((guest, idx) => {
-      if (!guest.name) newErrors[`guest${idx}Name`] = true
-      if (!guest.age || guest.age < 1) newErrors[`guest${idx}Age`] = true
-      if (!guest.sex) newErrors[`guest${idx}Sex`] = true
-      if (!guest.foodPreference) newErrors[`guest${idx}Food`] = true
+    if (!bookingDetails.time) {
+      validationErrors.time = 'Enter booking time.'
+    } else if (!isTimeBookable(bookingDetails.time)) {
+      validationErrors.time = `Time must be within ${restaurant.openingTime} - ${restaurant.closingTime}.`
+    }
+
+    if (bookingDetails.selectedTableIds.length === 0) {
+      validationErrors.tables = 'Select at least one seat.'
+    }
+
+    if (bookingDetails.guests.length === 0) {
+      validationErrors.guests = 'No guest entered. Please add at least one guest.'
+    }
+
+    if (seatRequiredGuests === 0 && bookingDetails.guests.length > 0) {
+      validationErrors.guests = 'At least one non-infant guest is required for booking.'
+    }
+
+    if (adultCount === 0) {
+      validationErrors.guests = 'At least one adult guest is required.'
+    }
+
+    if (infantCount > adultCount * 2) {
+      validationErrors.guests = 'Each adult can accompany up to two infants in this demo flow.'
+    }
+
+    if (selectedSeatCount < seatRequiredGuests) {
+      validationErrors.tables = `Select enough seats (need ${seatRequiredGuests} for non-infant guests, have ${selectedSeatCount} selected).`
+    }
+
+    bookingDetails.guests.forEach((guest, index) => {
+      if (!guest.name.trim()) validationErrors[`guest-${index}-name`] = true
+      if (Number(guest.age) >= 2 && !guest.foodPreference) validationErrors[`guest-${index}-food`] = true
+      if (guest.age === '' || Number.isNaN(Number(guest.age)) || Number(guest.age) < 0) {
+        validationErrors[`guest-${index}-age`] = true
+      }
+      if (Number(guest.age) >= 13 && !guest.sex) validationErrors[`guest-${index}-sex`] = true
     })
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    setErrors(validationErrors)
+    return Object.keys(validationErrors).length === 0
   }
 
-  const handleProceedToPayment = () => {
-    if (validateBooking()) {
-      const bookingId = `${restaurantId}-${Date.now()}`
-      localStorage.setItem(`booking-${bookingId}`, JSON.stringify({
-        restaurant,
-        bookingDetails,
-        createdAt: new Date().toISOString()
-      }))
-      navigate(`/payment/${bookingId}`)
-    } else {
-      alert('Please fill in all required fields')
+  const handleConfirmBooking = () => {
+    if (!validateBooking()) return
+
+    const bookingDate = new Date(`${bookingDetails.date}T${bookingDetails.time || '00:00'}`)
+    const inferredStatus = Number.isNaN(bookingDate.getTime()) || bookingDate.getTime() > Date.now()
+      ? 'Upcoming'
+      : 'Completed'
+
+    const bookingId = `BKG${Date.now()}`
+    const bookingPayload = {
+      id: bookingId,
+      userId: user?.id || 'UNKNOWN',
+      restaurantId: restaurant.id,
+      restaurant,
+      date: bookingDetails.date,
+      time: bookingDetails.time,
+      guests: bookingDetails.guests,
+      selectedSeatIds: bookingDetails.selectedTableIds,
+      seatNumbers: selectedSeats.map((seat) => seat.id),
+      bookingDetails: {
+        ...bookingDetails,
+        selectedSeats
+      },
+      paymentMethod: bookingDetails.paymentMethod,
+      paymentStatus: bookingDetails.paymentMethod === 'card' ? 'pending' : 'Pay at Restaurant',
+      bookingStatus: inferredStatus,
+      pricing: {
+        bookingBase,
+        costPerSeat,
+        selectedSeatCount,
+        subtotal,
+        discount,
+        total
+      },
+      createdBy: {
+        id: user?.id,
+        name: user?.name,
+        email: user?.email
+      },
+      feedbackSubmitted: false,
+      createdAt: new Date().toISOString()
     }
-  }
 
-  const totalGuests = bookingDetails.guests.length
-  const infantCount = bookingDetails.guests.filter(g => parseInt(g.age) < 2).length
+    createRuntimeBooking(bookingPayload)
+
+    upsertPaymentForBooking({
+      bookingId,
+      userId: user?.id || 'UNKNOWN',
+      restaurantId: restaurant.id,
+      amount: total,
+      method: bookingDetails.paymentMethod === 'card' ? 'Online' : 'Pay at Restaurant',
+      status: bookingDetails.paymentMethod === 'card' ? 'Pending' : 'Pay at Restaurant',
+      meta: {
+        date: bookingDetails.date,
+        time: bookingDetails.time,
+        seatCount: selectedSeatCount
+      }
+    })
+
+    // For online methods, create a booking record and continue to payment flow.
+    if (bookingDetails.paymentMethod === 'card') {
+      preserveDraftOnUnmountRef.current = true
+      navigate(`/payment/${bookingId}`)
+      return
+    }
+
+    setProcessingStep(0)
+    setShowProcessingModal(true)
+  }
 
   return (
     <div className="min-h-screen bg-[#F2F2F0]">
       <Header />
-      
+
       <main className="max-w-[1280px] mx-auto px-6 py-8">
-        
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-black hover:text-black mb-4 transition-colors font-semibold"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Back
-          </button>
-          <h1 className="text-3xl font-bold text-black">Complete Your Booking</h1>
-                  className="px-4 py-2 bg-accent-600 text-white rounded-lg hover:bg-brand-900 hover:text-white transition-colors text-sm font-bold"
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <button
+              onClick={() => navigate(-1)}
+              className="page-back"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back
+            </button>
+            <h1 className="text-3xl font-bold text-black">Table Reservation Studio</h1>
+            <p className="text-sm text-black/70 mt-1">
+              {restaurant.name} | {restaurant.openingTime} - {restaurant.closingTime}
+            </p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Main Form Section */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Date & Time Selection */}
-            <div className="bg-white  rounded-2xl p-6 shadow-md">
-              <h2 className="text-xl font-bold text-black mb-4">When?</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          <section className="xl:col-span-4 space-y-6">
+            <div className="surface-panel">
+              <h2 className="text-lg font-bold text-black mb-4">When do you want to dine?</h2>
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-black mb-2">Date</label>
+                  <label className="field-label">Date</label>
                   <input
                     type="date"
                     value={bookingDetails.date}
-                    onChange={(e) => setBookingDetails(prev => ({ ...prev, date: e.target.value }))}
                     min={new Date().toISOString().split('T')[0]}
-                    className={`w-full px-4 py-3 border ${errors.date ? 'border-red-400' : 'border-brand-200'} rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-100/40`}
+                    onChange={(event) => setBookingDetails((prev) => ({ ...prev, date: event.target.value }))}
+                    className={`field-input ${errors.date ? 'border-red-500' : ''}`}
                   />
+                  {errors.date && <p className="text-xs text-red-600 mt-1">{errors.date}</p>}
                 </div>
+
                 <div>
-                  <label className="block text-sm font-bold text-black mb-2">Time</label>
-                  <select
-                    value={bookingDetails.time}
-                    onChange={(e) => setBookingDetails(prev => ({ ...prev, time: e.target.value }))}
-                    className={`w-full px-4 py-3 border ${errors.time ? 'border-red-400' : 'border-brand-200'} rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-100/40`}
-                  >
-                    <option value="">Select Time</option>
-                    <option value="12:00 PM">12:00 PM</option>
-                    <option value="01:00 PM">01:00 PM</option>
-                    <option value="02:00 PM">02:00 PM</option>
-                    <option value="06:00 PM">06:00 PM</option>
-                    <option value="07:00 PM">07:00 PM</option>
-                    <option value="08:00 PM">08:00 PM</option>
-                    <option value="09:00 PM">09:00 PM</option>
-                  </select>
+                  <label className="field-label">Time (with AM/PM)</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <select
+                      value={timeParts.hour12}
+                      onChange={(event) => handleTimePartChange('hour12', event.target.value)}
+                      className={`field-input ${errors.time ? 'border-red-500' : ''}`}
+                    >
+                      <option value="">Hour</option>
+                      {Array.from({ length: 12 }, (_, index) => {
+                        const value = String(index + 1).padStart(2, '0')
+                        return <option key={value} value={value}>{value}</option>
+                      })}
+                    </select>
+
+                    <select
+                      value={timeParts.minute}
+                      onChange={(event) => handleTimePartChange('minute', event.target.value)}
+                      className={`field-input ${errors.time ? 'border-red-500' : ''}`}
+                    >
+                      <option value="">Min</option>
+                      {Array.from({ length: 12 }, (_, index) => {
+                        const value = String(index * 5).padStart(2, '0')
+                        return <option key={value} value={value}>{value}</option>
+                      })}
+                    </select>
+
+                    <select
+                      value={timeParts.period}
+                      onChange={(event) => handleTimePartChange('period', event.target.value)}
+                      className={`field-input ${errors.time ? 'border-red-500' : ''}`}
+                    >
+                      <option value="AM">AM</option>
+                      <option value="PM">PM</option>
+                    </select>
+                  </div>
+                  <p className="text-xs text-black/60 mt-1">
+                    Allowed range: {restaurant.openingTime} to {restaurant.closingTime}
+                  </p>
+                  {errors.time && <p className="text-xs text-red-600 mt-1">{errors.time}</p>}
                 </div>
               </div>
             </div>
 
-            {/* Guest Details */}
-            <div className="bg-white  rounded-2xl p-6 shadow-md">
+            <div className="surface-panel">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-black">Guest Details</h2>
+                <h2 className="text-lg font-bold text-black">Guests</h2>
                 <button
-                  onClick={addGuest}
-                  className="px-4 py-2 bg-brand-50 text-black rounded-lg hover:bg-gray-100 transition-colors text-sm font-bold"
+                  type="button"
+                  className="button-secondary"
+                  onClick={openGuestModal}
                 >
                   + Add Guest
                 </button>
               </div>
 
-              <div className="space-y-4">
-                {bookingDetails.guests.map((guest, idx) => (
-                  <div key={guest.id} className="p-4 border border-brand-200 rounded-xl">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-black">Guest {idx + 1}</h3>
-                      {bookingDetails.guests.length > 1 && (
-                        <button
-                          onClick={() => removeGuest(guest.id)}
-                          className="text-red-500 hover:text-red-700 text-sm"
-                        >
-                          Remove
-                        </button>
-                      )}
+              <div className="space-y-2">
+                {bookingDetails.guests.length === 0 && (
+                  <p className="text-sm text-black/60 border border-dashed border-brand-200 rounded-xl px-3 py-2 bg-white">
+                    No user entered yet. Click Add Guest to continue.
+                  </p>
+                )}
+
+                {bookingDetails.guests.map((guest, index) => (
+                  <div key={guest.id} className="border border-brand-200 rounded-xl px-3 py-2 bg-white">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold text-black">
+                        {guest.name || `Guest ${index + 1}`}
+                      </p>
+                      <button
+                        type="button"
+                        className="text-xs text-red-600 font-semibold"
+                        onClick={() => removeGuest(guest.id)}
+                      >
+                        Remove
+                      </button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-black mb-1">Name *</label>
-                        <input
-                          type="text"
-                          value={guest.name}
-                          onChange={(e) => updateGuest(guest.id, 'name', e.target.value)}
-                          placeholder="Full Name"
-                          className={`w-full px-3 py-2 border ${errors[`guest${idx}Name`] ? 'border-red-400' : 'border-brand-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-100/40 text-sm`}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-black mb-1">Age *</label>
-                        <input
-                          type="number"
-                          value={guest.age}
-                          onChange={(e) => updateGuest(guest.id, 'age', e.target.value)}
-                          placeholder="Age"
-                          min="0"
-                          max="120"
-                          className={`w-full px-3 py-2 border ${errors[`guest${idx}Age`] ? 'border-red-400' : 'border-brand-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-100/40 text-sm`}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-black mb-1">Gender *</label>
-                        <select
-                          value={guest.sex}
-                          onChange={(e) => updateGuest(guest.id, 'sex', e.target.value)}
-                          className={`w-full px-3 py-2 border ${errors[`guest${idx}Sex`] ? 'border-red-400' : 'border-brand-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-100/40 text-sm`}
-                        >
-                          <option value="">Select</option>
-                          <option value="Male">Male</option>
-                          <option value="Female">Female</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-black mb-1">Food Preference *</label>
-                        <select
-                          value={guest.foodPreference}
-                          onChange={(e) => updateGuest(guest.id, 'foodPreference', e.target.value)}
-                          className={`w-full px-3 py-2 border ${errors[`guest${idx}Food`] ? 'border-red-400' : 'border-brand-200'} rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-100/40 text-sm`}
-                        >
-                          <option value="">Select</option>
-                          <option value="Veg">Vegetarian</option>
-                          <option value="Non-Veg">Non-Vegetarian</option>
-                          <option value="Vegan">Vegan</option>
-                        </select>
-                      </div>
-                    </div>
+                    <p className="text-xs text-black/70 mt-0.5">
+                      Age: {guest.age || '-'} | Food: {guest.foodPreference || '-'} | Sex: {guest.sex || '-'}
+                    </p>
                   </div>
                 ))}
               </div>
-              
-              {infantCount > 0 && (
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-700">
-                    {infantCount} infant{infantCount > 1 ? 's' : ''} (under 2 years) - Separate seating not required
-                  </p>
-                </div>
+
+              {errors.guests && (
+                <p className="text-xs text-red-600 mt-3 font-semibold">{errors.guests}</p>
               )}
+
+              {infantCount > 0 && (
+                <p className="text-xs text-blue-700 mt-3">
+                  {infantCount} infant{infantCount > 1 ? 's are' : ' is'} included; separate seat not mandatory.
+                </p>
+              )}
+              <p className="text-xs text-black/60 mt-1">
+                Adults: {adultCount} | Children: {childCount} | Seat-requiring guests: {seatRequiredGuests}
+              </p>
             </div>
 
-            {/* Seating Selection - Moved to separate component below */}
-
-            {/* Payment Method */}
-            <div className="bg-white  rounded-2xl p-6 shadow-md">
-              <h2 className="text-xl font-bold text-black mb-4">Payment Method</h2>
-              <div className="space-y-3">
-                <label className="flex items-center gap-3 p-4 border-2 border-brand-200 rounded-xl cursor-pointer hover:border-brand-600 transition-colors">
+            <div className="surface-panel">
+              <h2 className="text-lg font-bold text-black mb-3">Payment Type</h2>
+              <div className="space-y-2">
+                <label className="flex items-center gap-3 border border-brand-200 rounded-xl p-3 cursor-pointer">
                   <input
                     type="radio"
-                    name="payment"
+                    name="paymentMethod"
                     value="card"
                     checked={bookingDetails.paymentMethod === 'card'}
-                    onChange={(e) => setBookingDetails(prev => ({ ...prev, paymentMethod: e.target.value }))}
-                    className="w-5 h-5 text-brand-900"
+                    onChange={(event) => setBookingDetails((prev) => ({ ...prev, paymentMethod: event.target.value }))}
                   />
-                  <div className="flex-1">
-                    <p className="font-bold text-black">Credit / Debit Card</p>
-                    <p className="text-sm text-black font-medium">Secure payment via gateway</p>
-                  </div>
+                  <span className="text-sm font-semibold text-black">Card / UPI (simulate online)</span>
                 </label>
-                <label className="flex items-center gap-3 p-4 border-2 border-brand-200 rounded-xl cursor-pointer hover:border-brand-600 transition-colors">
+                <label className="flex items-center gap-3 border border-brand-200 rounded-xl p-3 cursor-pointer">
                   <input
                     type="radio"
-                    name="payment"
+                    name="paymentMethod"
                     value="restaurant"
                     checked={bookingDetails.paymentMethod === 'restaurant'}
-                    onChange={(e) => setBookingDetails(prev => ({ ...prev, paymentMethod: e.target.value }))}
-                    className="w-5 h-5 text-brand-900"
+                    onChange={(event) => setBookingDetails((prev) => ({ ...prev, paymentMethod: event.target.value }))}
                   />
-                  <div className="flex-1">
-                    <p className="font-bold text-black">Pay at Restaurant</p>
-                    <p className="text-sm text-black font-medium">Pay when you dine</p>
-                  </div>
+                  <span className="text-sm font-semibold text-black">Pay at Restaurant</span>
                 </label>
               </div>
             </div>
+          </section>
 
-          </div>
+          <section className="xl:col-span-5">
+            <Tablechat
+              tableUnits={availableTableUnits}
+              selectedTableIds={bookingDetails.selectedTableIds}
+              onToggleTable={toggleTableSelection}
+              requiredSeats={seatRequiredGuests}
+            />
+            {errors.tables && (
+              <p className="text-sm text-red-600 mt-2 font-semibold">{errors.tables}</p>
+            )}
+          </section>
 
-          {/* Sidebar - Summary & Seating */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24 space-y-6">
-              
-              {/* Visual Seating Selection */}
-              <div className="bg-white  rounded-2xl p-6 shadow-md">
-                <h2 className="text-xl font-bold text-brand-900 mb-4">Select Table</h2>
-                {errors.seats && <p className="text-red-500 text-sm mb-2">{errors.seats}</p>}
-                <div className="space-y-3">
-                  {restaurant.tabledescription.tableTypesAvailable.map((tableType, idx) => {
-                    const capacity = restaurant.tabledescription.seatsPerTable[idx]
-                    const seatId = `${tableType}-${idx}`
-                    const isSelected = bookingDetails.selectedSeats.includes(seatId)
-                    const isAvailable = Math.random() > 0.3 // Mock availability
-                    
-                    return (
-                      <button
-                        key={idx}
-                        onClick={() => isAvailable && handleSeatToggle(seatId)}
-                        disabled={!isAvailable}
-                        className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
-                          !isAvailable 
-                            ? 'bg-brand-100 border-brand-200 text-brand-600 cursor-not-allowed'
-                            : isSelected
-                            ? 'bg-brand-50 border-brand-600 shadow-md'
-                            : 'border-brand-200 hover:border-brand-100 hover:shadow-md'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-semibold text-brand-900">{tableType}</p>
-                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                            isSelected ? 'bg-brand-600 border-brand-600' : 'border-brand-200'
-                          }`}>
-                            {isSelected && (
-                              <svg className="w-3 h-3 text-brand-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-brand-600">
-                          <span>{capacity} seats</span>
-                          <span className={isAvailable ? 'text-brand-600' : 'text-red-600'}>
-                            {isAvailable ? 'Available' : 'Booked'}
-                          </span>
-                        </div>
-                      </button>
-                    )
-                  })}
+          <aside className="xl:col-span-3">
+            <div className="surface-panel sticky top-24">
+              <h2 className="text-lg font-bold text-black mb-4">Live Summary</h2>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-black/70">Restaurant</span>
+                  <span className="font-semibold text-black text-right">{restaurant.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-black/70">Date</span>
+                  <span className="font-semibold text-black">{bookingDetails.date || 'Not selected'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-black/70">Time</span>
+                  <span className="font-semibold text-black">{formatInputTime(bookingDetails.time)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-black/70">Guests</span>
+                  <span className="font-semibold text-black">{totalGuests}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-black/70">Seat Requirement</span>
+                  <span className="font-semibold text-black">{seatRequiredGuests}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-black/70">Selected Seats</span>
+                  <span className={`font-semibold ${selectedSeatCount >= seatRequiredGuests ? 'text-green-700' : 'text-red-600'}`}>
+                    {selectedSeatCount}
+                  </span>
                 </div>
               </div>
 
-              {/* Booking Summary */}
-              <div className="bg-white  rounded-2xl p-6 shadow-md">
-                <h3 className="text-lg font-bold text-brand-900 mb-4">Booking Summary</h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-brand-600">Restaurant</span>
-                    <span className="font-semibold">{restaurant.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-brand-600">Total Guests</span>
-                    <span className="font-semibold">{totalGuests}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-brand-600">Tables Selected</span>
-                    <span className="font-semibold">{bookingDetails.selectedSeats.length}</span>
-                  </div>
-                  <div className="flex justify-between pt-3 border-t">
-                    <span className="text-brand-600">Base Price</span>
-                    <span className="font-semibold">₹{bookingDetails.selectedSeats.length * 500}</span>
-                  </div>
-                  <div className="flex justify-between text-brand-600">
-                    <span>Discount</span>
-                    <span className="font-semibold">-₹{bookingDetails.selectedSeats.length * 50}</span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold pt-3 border-t">
-                    <span>Total</span>
-                    <span className="text-brand-900">₹{bookingDetails.selectedSeats.length * 450}</span>
-                  </div>
+              <div className="mt-4 pt-4 border-t border-brand-200 text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-black/70">Booking Base</span>
+                  <span className="font-semibold text-black">₹{bookingBase}</span>
                 </div>
-                
-                <button
-                  onClick={handleProceedToPayment}
-                  className="w-full mt-6 py-4 bg-brand-200 text-brand-900 font-bold rounded-2xl hover:bg-brand-600 hover:text-white hover:shadow-lg transition-all"
-                >
-                  Proceed to Payment
+                <div className="flex justify-between">
+                  <span className="text-black/70">Per Seat Cost</span>
+                  <span className="font-semibold text-black">₹{costPerSeat}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-black/70">Seats Selected</span>
+                  <span className="font-semibold text-black">× {selectedSeatCount}</span>
+                </div>
+                <div className="flex justify-between text-green-700">
+                  <span>Discount</span>
+                  <span className="font-semibold">-₹{discount}</span>
+                </div>
+                <div className="flex justify-between text-lg font-bold pt-2 border-t border-brand-200">
+                  <span>Total</span>
+                  <span className="text-black">₹{total}</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="button-primary-block mt-5"
+                onClick={handleConfirmBooking}
+              >
+                {bookingDetails.paymentMethod === 'card' ? 'Continue to Payment' : 'Confirm Booking (Demo)'}
+              </button>
+              <p className="text-xs text-black/60 mt-2">
+                {bookingDetails.paymentMethod === 'card'
+                  ? 'Online flow: details and fake PIN confirmation on the payment page.'
+                  : 'This is a simulation flow with animated fake processing.'}
+              </p>
+            </div>
+          </aside>
+        </div>
+      </main>
+
+      {showGuestModal && (
+        <div className="modal-overlay" onClick={() => setShowGuestModal(false)}>
+          <div className="modal-card" onClick={(event) => event.stopPropagation()}>
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-black mb-4">Add Guest</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="field-label">Name</label>
+                  <input
+                    type="text"
+                    value={guestForm.name}
+                    onChange={(event) => setGuestForm((prev) => ({ ...prev, name: event.target.value }))}
+                    className="field-input"
+                  />
+                </div>
+                <div>
+                  <label className="field-label">Age</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="120"
+                    value={guestForm.age}
+                    onChange={(event) => setGuestForm((prev) => ({ ...prev, age: event.target.value }))}
+                    className="field-input"
+                  />
+                </div>
+                <div>
+                  <label className="field-label">Food Preference</label>
+                  <select
+                    value={guestForm.foodPreference}
+                    onChange={(event) => setGuestForm((prev) => ({ ...prev, foodPreference: event.target.value }))}
+                    className="field-input"
+                  >
+                    <option value="">Select</option>
+                    <option value="Veg">Vegetarian</option>
+                    <option value="Non-Veg">Non Vegetarian</option>
+                    <option value="Vegan">Vegan</option>
+                  </select>
+                  <p className="text-xs text-black/60 mt-1">Required for guests aged 2+ years.</p>
+                </div>
+                <div>
+                  <label className="field-label">Sex</label>
+                  <select
+                    value={guestForm.sex}
+                    onChange={(event) => setGuestForm((prev) => ({ ...prev, sex: event.target.value }))}
+                    className="field-input"
+                  >
+                    <option value="">Not specified</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  <p className="text-xs text-black/60 mt-1">Required for guests aged 13+ years.</p>
+                </div>
+              </div>
+              {guestFormError && <p className="text-xs text-red-600 mt-3">{guestFormError}</p>}
+              <div className="flex gap-2 mt-5">
+                <button type="button" className="button-secondary" onClick={() => setShowGuestModal(false)}>
+                  Cancel
+                </button>
+                <button type="button" className="button-primary" onClick={addGuestFromModal}>
+                  Add Guest
                 </button>
               </div>
             </div>
           </div>
-
         </div>
-      </main>
+      )}
+
+      {showProcessingModal && (
+        <div className="modal-overlay">
+          <div className="modal-card max-w-lg">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-black mb-4">Processing Reservation</h3>
+              <div className="h-2 w-full rounded-full bg-brand-100/30 overflow-hidden mb-4">
+                <div
+                  className="h-full bg-accent-600 transition-all duration-700"
+                  style={{ width: `${Math.min(100, Math.round((processingStep / processingSteps.length) * 100))}%` }}
+                />
+              </div>
+              <div className="space-y-3">
+                {processingSteps.map((step, index) => {
+                  const isDone = index < processingStep
+                  const isActive = index === processingStep
+                  return (
+                    <div key={step} className="flex items-center gap-3">
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${isDone ? 'bg-green-500 border-green-500 text-white' : isActive ? 'border-accent-600 text-accent-600 animate-pulse' : 'border-brand-200 text-brand-200'}`}>
+                        {isDone ? '✓' : index + 1}
+                      </div>
+                      <p className={`text-sm font-medium ${isDone || isActive ? 'text-black' : 'text-black/50'}`}>{step}</p>
+                    </div>
+                  )
+                })}
+              </div>
+              <p className="text-xs text-black/60 mt-5">Demo mode: no real payment is captured.</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 export default BookingPage
-
-
-
-

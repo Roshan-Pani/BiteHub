@@ -15,6 +15,11 @@ function RestaurantCards({ restaurants, onRestaurantClick }) {
     return cuisineImages[cuisineName] || cuisineImages.default
   }
 
+  const handleImageError = (event, cuisineName) => {
+    event.currentTarget.onerror = null
+    event.currentTarget.src = getFallbackImage(cuisineName)
+  }
+
   if (restaurants.length === 0) {
     return (
       <div className="w-full py-16 text-center">
@@ -46,9 +51,10 @@ function RestaurantCards({ restaurants, onRestaurantClick }) {
             {/* Image Section */}
             <div className="restaurant-card__image">
               <img
-                src={getFallbackImage(restaurant.cuisine.name)}
+                src={restaurant.images?.[0] || getFallbackImage(restaurant.cuisine.name)}
                 alt={restaurant.name}
                 className="restaurant-card__image-el group-hover:scale-110"
+                onError={(event) => handleImageError(event, restaurant.cuisine.name)}
               />
               
               {/* Rating Badge */}

@@ -1,3 +1,6 @@
+// Payment records mirror the booking flow and let the UI show payment method,
+// amount, and success/pending state. This supports booking history, receipts,
+// and anything that needs a payment summary for a reservation.
 export const payments = [
   { id: "P1", bookingId: "B1", amount: 1200, method: "Card", status: "Success" },
   { id: "P2", bookingId: "B2", amount: 2800, method: "UPI", status: "Success" },
