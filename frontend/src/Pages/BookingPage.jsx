@@ -2,10 +2,9 @@ import React, { useMemo, useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import Header from '../Components/Header'
 import Tablechat from '../Components/Tablechat'
-import { restaurants } from '../Data/restaurants'
-import { getSeatsForSlot } from '../Data/tableunits'
 import { useAuth } from '../context/AuthContext'
 import { useReservationData } from '../context/ReservationDataContext'
+import { getRestaurantById, getSeatsForSlotFromApi } from '../services/restaurantApi'
 
 const getDraftStorageKey = (restaurantId) => `booking-draft-${restaurantId}`
 
@@ -98,16 +97,53 @@ function BookingPage() {
   const { user } = useAuth()
   const { createRuntimeBooking, upsertPaymentForBooking } = useReservationData()
 
-  const restaurant = restaurants.find((record) => record.id === restaurantId)
+  const [restaurant, setRestaurant] = useState(null)
 
   const [bookingDetails, setBookingDetails] = useState(() => readBookingDraft(restaurantId))
+  const [availableTableUnits, setAvailableTableUnits] = useState([])
 
-  const availableTableUnits = useMemo(() => {
-    return getSeatsForSlot({
-      restaurantId,
-      date: bookingDetails.date,
-      time: bookingDetails.time
-    })
+  useEffect(() => {
+    let mounted = true
+
+    const loadRestaurant = async () => {
+      try {
+        const fetched = await getRestaurantById(restaurantId)
+        if (mounted) setRestaurant(fetched || null)
+      } catch {
+        if (mounted) setRestaurant(null)
+      }
+    }
+
+    loadRestaurant()
+
+    return () => {
+      mounted = false
+    }
+  }, [restaurantId])
+
+  useEffect(() => {
+    let mounted = true
+
+    const loadSeats = async () => {
+      try {
+        const seats = await getSeatsForSlotFromApi({
+          restaurantId,
+          date: bookingDetails.date,
+          time: bookingDetails.time
+        })
+        if (mounted) setAvailableTableUnits(Array.isArray(seats) ? seats : [])
+      } catch {
+        if (mounted) {
+          setAvailableTableUnits([])
+        }
+      }
+    }
+
+    loadSeats()
+
+    return () => {
+      mounted = false
+    }
   }, [restaurantId, bookingDetails.date, bookingDetails.time])
 
   const [showGuestModal, setShowGuestModal] = useState(false)

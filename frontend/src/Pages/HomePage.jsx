@@ -1,12 +1,13 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Header from '../Components/Header'
 import FilterPanel from '../Components/FilterPanel'
 import RestaurantCards from '../Components/RestaurantCards'
 import SingleRestaurantPopup from '../Components/SingleRestaurantPopup'
-import { restaurants } from '../Data/restaurants'
 import { filterRestaurants } from '../utils/filterRestaurants'
+import { getRestaurants } from '../services/restaurantApi'
 
 function HomePage() {
+  const [restaurants, setRestaurants] = useState([])
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilters, setActiveFilters] = useState({
     topRated: false,
@@ -24,6 +25,25 @@ function HomePage() {
     searchQuery,
     activeFilters
   })
+
+  useEffect(() => {
+    let mounted = true
+
+    const loadRestaurants = async () => {
+      try {
+        const records = await getRestaurants()
+        if (mounted) setRestaurants(Array.isArray(records) ? records : [])
+      } catch {
+        if (mounted) setRestaurants([])
+      }
+    }
+
+    loadRestaurants()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const handleSearchChange = (query) => {
     setSearchQuery(query)

@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useReservationData } from '../context/ReservationDataContext'
 import Header from '../Components/Header'
-import { restaurants } from '../Data/restaurants'
-import { getDetailedMenuForRestaurant, getMenuStats } from '../Data/restaurantMenuCatalog'
+import { getMenuStats } from '../Data/restaurantMenuCatalog'
+import { getRestaurantById, getRestaurantMenu } from '../services/restaurantApi'
+import { getRestaurantFeedbackStats } from '../services/reservationApi'
 
 const panelCards = [
   { key: 'photos', title: 'Photos' },
@@ -85,12 +85,87 @@ function DetailedRestaurantPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
-  const { getRestaurantFeedbackStats } = useReservationData()
 
   const [activePanel, setActivePanel] = useState(null)
   const [visibleReviewCount, setVisibleReviewCount] = useState(REVIEWS_BATCH_SIZE)
+  const [restaurant, setRestaurant] = useState(null)
+  const [detailedMenu, setDetailedMenu] = useState([])
+  const [feedbackStats, setFeedbackStats] = useState({
+    reviewCount: 0,
+    averageRating: 0,
+    allReviews: [],
+    recentReviews: []
+  })
 
-  const restaurant = useMemo(() => restaurants.find((entry) => entry.id === id) || null, [id])
+  useEffect(() => {
+    let mounted = true
+
+    const loadRestaurant = async () => {
+      try {
+        const fetched = await getRestaurantById(id)
+        if (mounted) setRestaurant(fetched || null)
+      } catch {
+        if (mounted) setRestaurant(null)
+      }
+    }
+
+    loadRestaurant()
+
+    return () => {
+      mounted = false
+    }
+  }, [id])
+
+  useEffect(() => {
+    if (!restaurant) return
+
+    let mounted = true
+
+    const loadMenu = async () => {
+      try {
+        const menu = await getRestaurantMenu(restaurant.id)
+        if (mounted) setDetailedMenu(Array.isArray(menu) ? menu : [])
+      } catch {
+        if (mounted) setDetailedMenu([])
+      }
+    }
+
+    loadMenu()
+
+    return () => {
+      mounted = false
+    }
+  }, [restaurant])
+
+  useEffect(() => {
+    if (!restaurant?.id) return
+
+    let mounted = true
+
+    const loadStats = async () => {
+      try {
+        const stats = await getRestaurantFeedbackStats(restaurant.id)
+        if (mounted && stats) {
+          setFeedbackStats(stats)
+        }
+      } catch {
+        if (mounted) {
+          setFeedbackStats({
+            reviewCount: 0,
+            averageRating: 0,
+            allReviews: [],
+            recentReviews: []
+          })
+        }
+      }
+    }
+
+    loadStats()
+
+    return () => {
+      mounted = false
+    }
+  }, [restaurant?.id])
 
   useEffect(() => {
     if (!restaurant) {
@@ -100,9 +175,7 @@ function DetailedRestaurantPage() {
 
   if (!restaurant) return null
 
-  const feedbackStats = getRestaurantFeedbackStats(restaurant.id)
   const displayRating = feedbackStats.reviewCount > 0 ? feedbackStats.averageRating : restaurant.rating
-  const detailedMenu = useMemo(() => getDetailedMenuForRestaurant(restaurant), [restaurant])
   const menuStats = useMemo(() => getMenuStats(detailedMenu), [detailedMenu])
   const allReviews = feedbackStats.allReviews || feedbackStats.recentReviews || []
   const visibleReviews = allReviews.slice(0, visibleReviewCount)

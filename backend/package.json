@@ -1,0 +1,23 @@
+{
+  "name": "bitehub-backend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "seed": "node src/scripts/seedDatabase.js"
+  },
+  "dependencies": {
+    "bitehub-workspace": "file:..",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "install": "^0.13.0",
+    "mongoose": "^8.19.2",
+    "npm": "^11.12.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

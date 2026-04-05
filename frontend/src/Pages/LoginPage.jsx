@@ -31,10 +31,10 @@ function LoginPage() {
     }))
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
-    const identity = resolveUserIdentity({
+    const identity = await resolveUserIdentity({
       email: formData.email,
       name: formData.name,
       phone: formData.phone

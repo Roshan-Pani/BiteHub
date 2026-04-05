@@ -1,16 +1,110 @@
-# React + Vite
+# BITEHUB 3-Layer Project
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project is now split into three layers:
 
-Currently, two official plugins are available:
+- `frontend/` -> React + Vite client
+- `backend/` -> Express + Mongoose API
+- `database/` -> MongoDB Docker Compose setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Project Structure
 
-## React Compiler
+```
+BITEHUB/
+  frontend/
+  backend/
+  database/
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Prerequisites
 
-## Expanding the ESLint configuration
+- Node.js 18+
+- npm
+- Docker Desktop (for local MongoDB via Compose)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 1) Install Dependencies
+
+Install layer-wise dependencies:
+
+```bash
+cd frontend
+npm install
+cd ../backend
+npm install
+cd ..
+```
+
+## 2) Start Database
+
+```bash
+cd database
+docker compose up -d
+cd ..
+```
+
+MongoDB runs at `mongodb://localhost:27017/bitehub`.
+
+## 3) Configure Backend Environment
+
+Create `backend/.env` from `backend/.env.example`.
+
+Default values:
+
+```
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/bitehub
+FRONTEND_URL=http://localhost:5173
+```
+
+## 4) Run Frontend + Backend
+
+Run in two terminals:
+
+Terminal 1:
+
+```bash
+cd backend
+npm run dev
+```
+
+Terminal 2:
+
+```bash
+cd frontend
+npm run dev
+```
+
+URLs:
+
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:5000`
+
+## API Endpoints (Core)
+
+- `GET /api/health`
+- `GET /api/restaurants`
+- `GET /api/restaurants/:id`
+- `GET /api/restaurants/:id/menu`
+- `GET /api/restaurants/:id/seats?date=YYYY-MM-DD&time=HH:mm`
+- `GET /api/users`
+- `GET /api/bookings`
+- `POST /api/bookings`
+- `GET /api/feedback`
+- `POST /api/feedback`
+- `GET /api/payments`
+- `POST /api/payments`
+
+## Seeding
+
+On backend startup, seed data is auto-upserted into MongoDB when collections are empty.
+
+Manual seed:
+
+```bash
+cd backend
+npm run seed
+```
+
+## Notes
+
+- Frontend has API services configured via `frontend/.env` (`VITE_API_BASE_URL`).
+- Frontend pages use backend APIs with local fallback data for resilience during migration.
