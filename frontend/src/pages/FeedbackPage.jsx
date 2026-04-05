@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useReservationData } from '../context/ReservationDataContext'
-import Header from '../Components/Header'
+import Header from '../components/Header'
 
 function FeedbackPage() {
   const { bookingId } = useParams()

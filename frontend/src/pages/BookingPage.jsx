@@ -1,10 +1,11 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import Header from '../Components/Header'
-import Tablechat from '../Components/Tablechat'
+import Header from '../components/Header'
+import TableChat from '../components/TableChat'
 import { useAuth } from '../context/AuthContext'
 import { useReservationData } from '../context/ReservationDataContext'
 import { getRestaurantById, getSeatsForSlotFromApi } from '../services/restaurantApi'
+import { parseMeridianTime } from '../../../shared/bookingRules.js'
 
 const getDraftStorageKey = (restaurantId) => `booking-draft-${restaurantId}`
 
@@ -33,17 +34,6 @@ const readBookingDraft = (restaurantId) => {
   } catch {
     return fallback
   }
-}
-
-const parseMeridianTime = (timeValue) => {
-  if (!timeValue || typeof timeValue !== 'string') return 0
-  const [clock, period] = timeValue.trim().split(' ')
-  let [hours, minutes] = clock.split(':').map(Number)
-
-  if (period === 'PM' && hours !== 12) hours += 12
-  if (period === 'AM' && hours === 12) hours = 0
-
-  return (hours * 60) + minutes
 }
 
 const parseInputTime = (timeValue) => {
@@ -227,8 +217,10 @@ function BookingPage() {
     return null
   }
 
-  const openTimeMinutes = parseMeridianTime(restaurant.openingTime)
-  const closeTimeMinutes = parseMeridianTime(restaurant.closingTime)
+  const openParsed = parseMeridianTime(restaurant.openingTime)
+  const closeParsed = parseMeridianTime(restaurant.closingTime)
+  const openTimeMinutes = openParsed ? (openParsed.hours * 60) + openParsed.minutes : 0
+  const closeTimeMinutes = closeParsed ? (closeParsed.hours * 60) + closeParsed.minutes : 0
 
   const selectedSeats = availableTableUnits.filter((seat) => bookingDetails.selectedTableIds.includes(seat.id))
   const selectedSeatCount = bookingDetails.selectedTableIds.length
@@ -645,7 +637,7 @@ function BookingPage() {
           </section>
 
           <section className="xl:col-span-5">
-            <Tablechat
+            <TableChat
               tableUnits={availableTableUnits}
               selectedTableIds={bookingDetails.selectedTableIds}
               onToggleTable={toggleTableSelection}

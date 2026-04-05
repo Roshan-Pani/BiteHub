@@ -1,6 +1,24 @@
 import { Booking, Feedback, Payment, Restaurant, User } from '../models/index.js'
 import { getSeedData } from './seedSources.js'
 
+const collections = [Restaurant, User, Booking, Feedback, Payment]
+
+const ensureCollectionsAndIndexes = async () => {
+  await Promise.all(collections.map(async (Model) => {
+    try {
+      await Model.createCollection()
+    } catch (error) {
+      if (error?.code === 48 || /NamespaceExists/i.test(error?.message || '')) {
+        return null
+      }
+      throw error
+    }
+    return null
+  }))
+
+  await Promise.all(collections.map((Model) => Model.syncIndexes()))
+}
+
 const upsertById = async (Model, records) => {
   if (!Array.isArray(records) || records.length === 0) return
 
@@ -17,7 +35,8 @@ const upsertById = async (Model, records) => {
 }
 
 export const seedDatabase = async () => {
-  const collections = [Restaurant, User, Booking, Feedback, Payment]
+  await ensureCollectionsAndIndexes()
+
   const [restaurantCount, userCount, bookingCount, feedbackCount, paymentCount] = await Promise.all(
     collections.map((Model) => Model.estimatedDocumentCount())
   )

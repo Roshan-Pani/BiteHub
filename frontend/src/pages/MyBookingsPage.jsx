@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Header from '../Components/Header'
-import BookingDetailModal from '../Components/BookingDetailModal'
+import Header from '../components/Header'
+import BookingDetailModal from '../components/BookingDetailModal'
 import { useAuth } from '../context/AuthContext'
 import { useReservationData } from '../context/ReservationDataContext'
 

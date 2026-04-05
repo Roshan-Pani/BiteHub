@@ -3,7 +3,7 @@ import React from 'react'
 // Visual seat map component similar to cinema or airline booking.
 // Shows seats grouped by type (Booth, Standard Table, etc.) as clickable boxes.
 // Each box represents one individual seat/chair.
-function Tablechat({ tableUnits, selectedTableIds, onToggleTable, requiredSeats = 1 }) {
+function TableChat({ tableUnits, selectedTableIds, onToggleTable, requiredSeats = 1 }) {
   // Group seats by type
   const groupedByType = tableUnits.reduce((acc, seat) => {
     if (!acc[seat.type]) acc[seat.type] = []
@@ -23,7 +23,7 @@ function Tablechat({ tableUnits, selectedTableIds, onToggleTable, requiredSeats 
   if (typeKeys.length === 0) {
     return (
       <div className="surface-panel">
-        <h3 className="text-lg font-bold text-black mb-2">Tablechat - Seat Selection</h3>
+        <h3 className="text-lg font-bold text-black mb-2">Table Chat - Seat Selection</h3>
         <p className="text-sm text-black/70">No seats available for this restaurant.</p>
       </div>
     )
@@ -32,7 +32,7 @@ function Tablechat({ tableUnits, selectedTableIds, onToggleTable, requiredSeats 
   return (
     <div className="surface-panel">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-bold text-black">Tablechat - Seat Selection</h3>
+        <h3 className="text-xl font-bold text-black">Table Chat - Seat Selection</h3>
         <div className="flex items-center gap-3">
           <span className={`text-sm font-semibold ${hasEnoughSeats ? 'text-green-700' : 'text-black/70'}`}>
             Seats: {selectedCount}/{requiredSeats}
@@ -147,4 +147,4 @@ function Tablechat({ tableUnits, selectedTableIds, onToggleTable, requiredSeats 
   )
 }
 
-export default Tablechat
+export default TableChat

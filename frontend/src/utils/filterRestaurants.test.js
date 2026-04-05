@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { restaurants } from '../Data/restaurants.js'
+import { restaurants } from '../data/restaurants.js'
 import { filterRestaurants } from './filterRestaurants.js'
 
 // Build a baseline filter object and let each test override only the values it

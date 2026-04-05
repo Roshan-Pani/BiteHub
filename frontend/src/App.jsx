@@ -6,16 +6,16 @@ import { ReservationDataProvider } from './context/ReservationDataContext'
 import { purgeExpiredRuntimeData } from './services/runtimeDataLifecycleService'
 
 // Pages
-import HomePage from './Pages/HomePage'
-import LoginPage from './Pages/LoginPage'
-import DetailedRestaurantPage from './Pages/DetailedRestaurantPage'
-import BookingPage from './Pages/BookingPage'
-import PaymentPage from './Pages/PaymentPage'
-import FeedbackPage from './Pages/FeedbackPage'
-import MyBookingsPage from './Pages/MyBookingsPage'
+import HomePage from './pages/HomePage'
+import LoginPage from './pages/LoginPage'
+import DetailedRestaurantPage from './pages/DetailedRestaurantPage'
+import BookingPage from './pages/BookingPage'
+import PaymentPage from './pages/PaymentPage'
+import FeedbackPage from './pages/FeedbackPage'
+import MyBookingsPage from './pages/MyBookingsPage'
 
 // Components
-import ProtectedRoute from './Components/ProtectedRoute'
+import ProtectedRoute from './components/ProtectedRoute'
 
 // Routes Configuration
 const router = createBrowserRouter([

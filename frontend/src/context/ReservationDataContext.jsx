@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import {
   countWords,
+  evaluateCancellationPolicy as evaluateCancellationPolicyRule,
   normalizePaymentStatus
 } from './reservationDataRules'
 import {
@@ -143,11 +144,7 @@ export const ReservationDataProvider = ({ children }) => {
   }, [feedback, userMap])
 
   const evaluateCancellationPolicy = useCallback((booking) => {
-    if (!booking) return { allowed: false, reason: 'Booking not found.' }
-    if (String(booking.bookingStatus || '').toLowerCase() !== 'upcoming') {
-      return { allowed: false, reason: 'Only upcoming bookings can be cancelled.' }
-    }
-    return { allowed: true, reason: '' }
+    return evaluateCancellationPolicyRule({ booking })
   }, [])
 
   const createRuntimeBooking = useCallback(async (payload) => {

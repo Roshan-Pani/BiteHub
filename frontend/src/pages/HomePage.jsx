@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import Header from '../Components/Header'
-import FilterPanel from '../Components/FilterPanel'
-import RestaurantCards from '../Components/RestaurantCards'
-import SingleRestaurantPopup from '../Components/SingleRestaurantPopup'
+import Header from '../components/Header'
+import FilterPanel from '../components/FilterPanel'
+import RestaurantCards from '../components/RestaurantCards'
+import SingleRestaurantPopup from '../components/SingleRestaurantPopup'
 import { filterRestaurants } from '../utils/filterRestaurants'
 import { getRestaurants } from '../services/restaurantApi'
 

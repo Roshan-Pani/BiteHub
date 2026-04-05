@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import Header from '../Components/Header'
+import Header from '../components/Header'
 import { useReservationData } from '../context/ReservationDataContext'
 
 const formatCardNumber = (value) => {

@@ -1,30 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import Header from '../Components/Header'
-import { getMenuStats } from '../Data/restaurantMenuCatalog'
+import Header from '../components/Header'
+import { getMenuStats } from '../data/restaurantMenuCatalog'
 import { getRestaurantById, getRestaurantMenu } from '../services/restaurantApi'
 import { getRestaurantFeedbackStats } from '../services/reservationApi'
+import { parseMeridianTime } from '../../../shared/bookingRules.js'
 
 const panelCards = [
   { key: 'photos', title: 'Photos' },
   { key: 'menu', title: 'Menu' },
   { key: 'reviews', title: 'Reviews' }
 ]
-
-const parseMeridianTime = (value) => {
-  if (!value || typeof value !== 'string') return null
-  const [clock, period] = value.trim().split(' ')
-  if (!clock || !period) return null
-
-  const [hoursRaw, minutesRaw] = clock.split(':').map(Number)
-  if (Number.isNaN(hoursRaw) || Number.isNaN(minutesRaw)) return null
-
-  let hours = hoursRaw
-  if (period === 'PM' && hours !== 12) hours += 12
-  if (period === 'AM' && hours === 12) hours = 0
-  return { hours, minutes: minutesRaw }
-}
 
 const isRestaurantOpenNow = (openingTime, closingTime) => {
   const open = parseMeridianTime(openingTime)
