@@ -1,110 +1,49 @@
-# BITEHUB 3-Layer Project
+# BITEHUB
 
-This project is now split into three layers:
-
-- `frontend/` -> React + Vite client
-- `backend/` -> Express + Mongoose API
-- `database/` -> MongoDB Docker Compose setup
+BITEHUB now uses a React + Vite frontend and a Spring Boot 4 + MySQL backend.
 
 ## Project Structure
 
-```
-BITEHUB/
-  frontend/
-  backend/
-  database/
-```
+- `frontend/` - React client
+- `spring-backend/` - Spring Boot API
+- `shared/` - shared booking rules used by the frontend and backend
 
-## Prerequisites
-
-- Node.js 18+
-- npm
-- Docker Desktop (for local MongoDB via Compose)
-
-## 1) Install Dependencies
-
-Install layer-wise dependencies:
+## Frontend Setup
 
 ```bash
 cd frontend
 npm install
-cd ../backend
-npm install
-cd ..
-```
-
-## 2) Start Database
-
-```bash
-cd database
-docker compose up -d
-cd ..
-```
-
-MongoDB runs at `mongodb://localhost:27017/bitehub`.
-
-## 3) Configure Backend Environment
-
-Create `backend/.env` from `backend/.env.example`.
-
-Default values:
-
-```
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/bitehub
-FRONTEND_URL=http://localhost:5173
-```
-
-## 4) Run Frontend + Backend
-
-Run in two terminals:
-
-Terminal 1:
-
-```bash
-cd backend
 npm run dev
 ```
 
-Terminal 2:
+The frontend reads `VITE_API_BASE_URL` from `frontend/.env` or `frontend/.env.example`.
 
-```bash
-cd frontend
-npm run dev
+Default API URL:
+
+```text
+http://localhost:8080/api
 ```
 
-URLs:
-
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:5000`
-
-## API Endpoints (Core)
-
-- `GET /api/health`
-- `GET /api/restaurants`
-- `GET /api/restaurants/:id`
-- `GET /api/restaurants/:id/menu`
-- `GET /api/restaurants/:id/seats?date=YYYY-MM-DD&time=HH:mm`
-- `GET /api/users`
-- `GET /api/bookings`
-- `POST /api/bookings`
-- `GET /api/feedback`
-- `POST /api/feedback`
-- `GET /api/payments`
-- `POST /api/payments`
-
-## Seeding
-
-On backend startup, seed data is auto-upserted into MongoDB when collections are empty.
-
-Manual seed:
+## Backend Setup
 
 ```bash
-cd backend
-npm run seed
+cd spring-backend
+mvn test
+mvn spring-boot:run
 ```
 
-## Notes
+The Spring backend expects MySQL connection values in `spring-backend/src/main/resources/application.yml` or environment variables:
 
-- Frontend has API services configured via `frontend/.env` (`VITE_API_BASE_URL`).
-- Frontend pages use backend APIs with local fallback data for resilience during migration.
+- `DB_URL`
+- `DB_USERNAME`
+- `DB_PASSWORD`
+
+## Test Runner
+
+From the repo root:
+
+```bash
+./run-all-tests.ps1
+```
+
+This runs the Spring backend tests and then the frontend tests.

@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+frontend/dist
+spring-backend/target
 *.local
 
 # Editor directories and files

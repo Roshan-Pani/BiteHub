@@ -1,9 +1,9 @@
 $ErrorActionPreference = 'Stop'
 
-Write-Host 'Running backend tests...' -ForegroundColor Cyan
-Push-Location (Join-Path $PSScriptRoot 'backend')
+Write-Host 'Running Spring backend tests...' -ForegroundColor Cyan
+Push-Location (Join-Path $PSScriptRoot 'spring-backend')
 try {
-  npm test
+  mvn test
   if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
   }
